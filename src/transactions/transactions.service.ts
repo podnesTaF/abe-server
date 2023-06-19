@@ -17,6 +17,7 @@ export class TransactionsService {
       amount: dto.amount,
       type: dto.type,
       txHash: dto.txHash,
+      wallet: dto.wallet,
     });
   }
 
