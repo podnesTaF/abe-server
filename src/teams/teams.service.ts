@@ -123,6 +123,13 @@ export class TeamsService {
     };
   }
 
+  async findAllByUser(userId?: number) {
+    return this.repository.find({
+      where: { manager: { id: +userId } },
+      relations: ['players', 'coach', 'logo', 'country'],
+    });
+  }
+
   async getRegistrations(
     userId: number,
     query: { page?: string; limit?: string },
