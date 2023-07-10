@@ -1,33 +1,37 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { config as evnconfig } from 'dotenv';
-import { CoachEntity } from 'src/coach/entities/coach.entity';
-import { EventEntity } from 'src/events/entities/event.entity';
-import { LocationEntity } from 'src/locations/entities/locations.entity';
-import { PersonalBestEntity } from 'src/personal-bests/entities/personal-best.entity';
+import { Club } from 'src/club/entities/club.entity';
+import { Coach } from 'src/coach/entities/coach.entity';
+import { Country } from 'src/country/entity/country.entity';
+import { Event } from 'src/events/entities/event.entity';
+import { Location } from 'src/locations/entities/locations.entity';
+import { Media } from 'src/media/entities/media.entity';
+import { PersonalBest } from 'src/personal-bests/entities/personal-best.entity';
 import { PlayerEntity } from 'src/players/entities/player.entity';
 import { PrizeEntity } from 'src/prizes/entities/prize.entity';
-import { TeamEntity } from 'src/teams/entities/team.entity';
-import { TransactionEntity } from 'src/transactions/entities/transaction.entity';
-import { UserEntity } from 'src/user/entities/user.entity';
+import { Team } from 'src/teams/entities/team.entity';
+import { User } from 'src/user/entities/user.entity';
 evnconfig();
 
 const config: TypeOrmModuleOptions = {
   type: 'mysql',
-  host: process.env.MYSQLHOST || 'localhost',
-  port: parseInt(process.env.MYSQLPORT, 10) || 3306,
-  username: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT, 10) || 3306,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
   entities: [
-    UserEntity,
-    EventEntity,
-    LocationEntity,
+    User,
+    Event,
+    Club,
+    Location,
+    Country,
     PlayerEntity,
-    TeamEntity,
-    CoachEntity,
-    PersonalBestEntity,
+    Team,
+    Coach,
+    PersonalBest,
     PrizeEntity,
-    TransactionEntity,
+    Media,
   ],
   synchronize: true,
 };

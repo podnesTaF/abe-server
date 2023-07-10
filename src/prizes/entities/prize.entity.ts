@@ -1,4 +1,4 @@
-import { EventEntity } from 'src/events/entities/event.entity';
+import { Event } from 'src/events/entities/event.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
@@ -10,8 +10,8 @@ export class PrizeEntity {
   place: number;
 
   @Column()
-  sum: number;
+  amount: number;
 
-  @ManyToOne(() => EventEntity, (event) => event.prizes)
-  event: EventEntity;
+  @ManyToOne(() => Event, (event) => event.prizes, { onDelete: 'CASCADE' })
+  event: Event;
 }

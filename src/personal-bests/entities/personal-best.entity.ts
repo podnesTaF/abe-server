@@ -2,7 +2,7 @@ import { PlayerEntity } from 'src/players/entities/player.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class PersonalBestEntity {
+export class PersonalBest {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -12,6 +12,8 @@ export class PersonalBestEntity {
   @Column()
   timeInSeconds: number;
 
-  @ManyToOne(() => PlayerEntity, (player) => player.personalBests)
+  @ManyToOne(() => PlayerEntity, (player) => player.personalBests, {
+    onDelete: 'CASCADE',
+  })
   player: PlayerEntity;
 }

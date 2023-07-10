@@ -1,19 +1,22 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Country } from 'src/country/entity/country.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class LocationEntity {
+export class Location {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  street: string;
+  address: string;
 
   @Column()
-  postalCode: string;
+  zipCode: string;
 
   @Column()
   city: string;
 
-  @Column()
-  country: string;
+  @ManyToOne(() => Country, (country) => country.locations, {
+    onDelete: 'CASCADE',
+  })
+  country: Country;
 }

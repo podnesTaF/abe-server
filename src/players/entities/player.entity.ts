@@ -1,5 +1,6 @@
-import { PersonalBestEntity } from 'src/personal-bests/entities/personal-best.entity';
-import { TeamEntity } from 'src/teams/entities/team.entity';
+import { Country } from 'src/country/entity/country.entity';
+import { PersonalBest } from 'src/personal-bests/entities/personal-best.entity';
+import { Team } from 'src/teams/entities/team.entity';
 import {
   Column,
   Entity,
@@ -22,9 +23,15 @@ export class PlayerEntity {
   @Column()
   dateOfBirth: Date;
 
-  @ManyToOne(() => TeamEntity, (team) => team.players)
-  team: TeamEntity;
+  @Column()
+  gender: string;
 
-  @OneToMany(() => PersonalBestEntity, (personalBest) => personalBest.player)
-  personalBests: PersonalBestEntity[];
+  @ManyToOne(() => Country, (country) => country.players)
+  country: Country;
+
+  @ManyToOne(() => Team, (team) => team.players, { onDelete: 'CASCADE' })
+  team: Team;
+
+  @OneToMany(() => PersonalBest, (personalBest) => personalBest.player)
+  personalBests: PersonalBest[];
 }

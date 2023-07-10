@@ -1,11 +1,5 @@
-import {
-  IsArray,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { CreateLocationDto } from 'src/locations/dto/create-location.dto';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
+import { Media } from 'src/media/entities/media.entity';
 import { CreatePrizeDto } from 'src/prizes/dto/create-prize.dto';
 
 export class CreateEventDto {
@@ -16,18 +10,27 @@ export class CreateEventDto {
   description: string;
 
   @IsString()
-  @IsOptional()
-  imageUrl: string;
-
-  @IsNumber()
-  price: number;
+  startDateTime: string;
 
   @IsString()
-  date: string;
+  endDate: string;
 
   @IsObject()
-  location: CreateLocationDto;
+  location: {
+    country: string;
+    city: string;
+    zipCode: string;
+    address: string;
+  };
 
   @IsArray()
   prizes: CreatePrizeDto[];
+
+  @IsString()
+  @IsOptional()
+  introImage?: Media;
+
+  @IsString()
+  @IsOptional()
+  minorImage?: Media;
 }

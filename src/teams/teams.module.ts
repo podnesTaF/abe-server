@@ -1,37 +1,41 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoachService } from 'src/coach/coach.service';
-import { CoachEntity } from 'src/coach/entities/coach.entity';
-import { EventEntity } from 'src/events/entities/event.entity';
+import { Coach } from 'src/coach/entities/coach.entity';
+import { CountryService } from 'src/country/country.service';
+import { Country } from 'src/country/entity/country.entity';
+import { Event } from 'src/events/entities/event.entity';
 import { EventsService } from 'src/events/events.service';
-import { LocationEntity } from 'src/locations/entities/locations.entity';
+import { FileService } from 'src/file/file.service';
+import { Location } from 'src/locations/entities/locations.entity';
 import { LocationsService } from 'src/locations/locations.service';
-import { PersonalBestEntity } from 'src/personal-bests/entities/personal-best.entity';
+import { Media } from 'src/media/entities/media.entity';
+import { MediaService } from 'src/media/media.service';
+import { PersonalBest } from 'src/personal-bests/entities/personal-best.entity';
 import { PersonalBestsService } from 'src/personal-bests/personal-bests.service';
 import { PlayerEntity } from 'src/players/entities/player.entity';
 import { PlayersService } from 'src/players/players.service';
 import { PrizeEntity } from 'src/prizes/entities/prize.entity';
 import { PrizesService } from 'src/prizes/prizes.service';
-import { TransactionEntity } from 'src/transactions/entities/transaction.entity';
-import { TransactionsService } from 'src/transactions/transactions.service';
-import { UserEntity } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
-import { TeamEntity } from './entities/team.entity';
+import { Team } from './entities/team.entity';
 import { TeamsController } from './teams.controller';
 import { TeamsService } from './teams.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      TeamEntity,
+      Team,
       PlayerEntity,
-      CoachEntity,
-      UserEntity,
-      LocationEntity,
-      EventEntity,
+      Coach,
+      User,
+      Location,
+      Event,
+      Country,
       PrizeEntity,
-      PersonalBestEntity,
-      TransactionEntity,
+      PersonalBest,
+      Media,
     ]),
   ],
   controllers: [TeamsController],
@@ -43,8 +47,10 @@ import { TeamsService } from './teams.service';
     EventsService,
     PrizesService,
     LocationsService,
+    CountryService,
+    FileService,
     PersonalBestsService,
-    TransactionsService,
+    MediaService,
   ],
   exports: [TeamsService],
 })

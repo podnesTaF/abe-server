@@ -1,7 +1,10 @@
-import { CoachEntity } from 'src/coach/entities/coach.entity';
-import { EventEntity } from 'src/events/entities/event.entity';
+import { Club } from 'src/club/entities/club.entity';
+import { Coach } from 'src/coach/entities/coach.entity';
+import { Country } from 'src/country/entity/country.entity';
+import { Event } from 'src/events/entities/event.entity';
+import { Media } from 'src/media/entities/media.entity';
 import { PlayerEntity } from 'src/players/entities/player.entity';
-import { UserEntity } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   Entity,
@@ -15,37 +18,52 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class TeamEntity {
+export class Team {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  club: string;
+  @Column()
+  gender: string;
 
   @Column()
   city: string;
 
+  @ManyToOne(() => Country, (country) => country.teams)
+  country: Country;
+
+  @ManyToOne(() => User, (user) => user.teams, { onDelete: 'CASCADE' })
+  manager: User;
+
+  @OneToMany(() => Club, (club) => club.team, { nullable: true })
+  clubs: Club[];
+
   @Column()
-  country: string;
+  club: string;
 
-  @ManyToOne(() => UserEntity, (user) => user.teams, { onDelete: 'CASCADE' })
-  manager: UserEntity;
-
-  @OneToOne(() => CoachEntity, {
+  @OneToOne(() => Coach, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  coach: CoachEntity;
+  coach: Coach;
+
+  @ManyToOne(() => Media, { nullable: true })
+  @JoinColumn()
+  logo: Media;
+
+  @ManyToOne(() => Media, { nullable: true })
+  @JoinColumn()
+  teamImage: Media;
 
   @OneToMany(() => PlayerEntity, (player) => player.team, {
     onDelete: 'CASCADE',
+    eager: true,
   })
   players: PlayerEntity[];
 
-  @ManyToMany(() => EventEntity, (event) => event.teams, {
+  @ManyToMany(() => Event, (event) => event.teams, {
     onUpdate: 'NO ACTION',
   })
   @JoinTable({
@@ -59,5 +77,5 @@ export class TeamEntity {
       referencedColumnName: 'id',
     },
   })
-  events: EventEntity[];
+  events: Event[];
 }

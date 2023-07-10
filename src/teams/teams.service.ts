@@ -1,26 +1,28 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CoachService } from 'src/coach/coach.service';
-import { EventEntity } from 'src/events/entities/event.entity';
+import { CountryService } from 'src/country/country.service';
+import { Event } from 'src/events/entities/event.entity';
 import { EventsService } from 'src/events/events.service';
 import { PlayersService } from 'src/players/players.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
-import { TeamEntity } from './entities/team.entity';
+import { Team } from './entities/team.entity';
 
 @Injectable()
 export class TeamsService {
   constructor(
-    @InjectRepository(TeamEntity)
-    private repository: Repository<TeamEntity>,
-    @InjectRepository(EventEntity)
-    private eventRepository: Repository<EventEntity>,
+    @InjectRepository(Team)
+    private repository: Repository<Team>,
+    @InjectRepository(Event)
+    private eventRepository: Repository<Event>,
     private playersService: PlayersService,
     private coachService: CoachService,
     private userService: UserService,
     private eventService: EventsService,
+    private countryService: CountryService,
   ) {}
 
   async create(dto: CreateTeamDto, managerId: number) {
@@ -35,11 +37,16 @@ export class TeamsService {
 
     const manager = await this.userService.findById(managerId);
 
+    const country = await this.countryService.findById(dto.countryId);
+
     return this.repository.save({
       name: dto.name,
       club: dto.club,
       city: dto.city,
-      country: dto.country,
+      gender: dto.gender,
+      country,
+      logo: dto.logo,
+      teamImage: dto.teamImage,
       coach,
       players,
       manager,
@@ -67,29 +74,53 @@ export class TeamsService {
     team.events.push(event);
     event.teams.push(team);
 
-    await this.userService.createTransaction(
-      userId,
-      -event.price,
-      'Event registration',
-      dto.txHash,
-      dto.wallet,
-    );
-    await this.userService.addToBalance(-event.price, userId);
-
     await this.repository.save(team);
     await this.eventRepository.save(event);
   }
 
-  findAll(user?: string, userId?: number) {
-    if (user) {
-      return this.repository.find({
-        where: { manager: { id: userId } },
-        relations: ['players', 'players.personalBests', 'coach', 'events'],
-      });
+  async findAll(queries: any, userId?: number) {
+    const page = +queries.page || 1; // Default to page 1 if not provided
+    const limit = +queries.limit || 5;
+
+    const qb = this.repository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.country', 'country')
+      .leftJoinAndSelect('team.coach', 'coach')
+      .leftJoinAndSelect('team.players', 'players')
+      .leftJoinAndSelect('team.logo', 'logo')
+      .leftJoinAndSelect('players.personalBests', 'personalBests')
+      .leftJoinAndSelect('team.events', 'events');
+
+    if (queries.user) {
+      qb.where('team.managerId = :id', { id: userId });
+
+      return qb.getMany();
     }
-    return this.repository.find({
-      relations: ['players', 'players.personalBests'],
-    });
+
+    if (queries.country) {
+      qb.where('country.name = :name', { name: queries.country });
+    }
+
+    if (queries.gender) {
+      qb.andWhere('team.gender = :gender', { gender: queries.gender });
+    }
+
+    if (queries.name) {
+      qb.andWhere('team.gender = :name', { name: queries.name });
+    }
+
+    const totalItems = await qb.getCount();
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const teams = await qb.getMany();
+
+    return {
+      teams,
+      totalPages,
+    };
   }
 
   async getRegistrations(
@@ -105,14 +136,18 @@ export class TeamsService {
         'events',
         'events.teams',
         'events.location',
+        'events.location.country',
         'events.prizes',
         'coach',
       ],
       order: { id: 'ASC' },
     });
 
-    const removeUnnecessary = (event: EventEntity) => {
-      const totalPrize = event.prizes.reduce((acc, curr) => acc + curr.sum, 0);
+    const removeUnnecessary = (event: Event) => {
+      const totalPrize = event.prizes.reduce(
+        (acc, curr) => acc + curr.amount,
+        0,
+      );
       delete event.prizes;
       delete event.teams;
 
@@ -122,7 +157,7 @@ export class TeamsService {
       };
     };
 
-    const removeUnnecessaryForTeam = (team: TeamEntity) => {
+    const removeUnnecessaryForTeam = (team: Team) => {
       delete team.events;
       return team;
     };
@@ -154,7 +189,10 @@ export class TeamsService {
   }
 
   findOne(id: number) {
-    return this.repository.findOne({ where: { id }, relations: ['events'] });
+    return this.repository.findOne({
+      where: { id },
+      relations: ['events', 'players', 'coach', 'logo', 'country'],
+    });
   }
 
   update(id: number, updateTeamDto: UpdateTeamDto) {
