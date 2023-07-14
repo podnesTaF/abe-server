@@ -1,14 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { CreatePlayerDto } from './dto/create-player.dto';
-import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayersService } from './players.service';
 
 @Controller('players')
@@ -18,11 +9,6 @@ export class PlayersController {
   @Post()
   create(@Body() createPlayerDto: CreatePlayerDto) {
     return this.playersService.create(createPlayerDto);
-  }
-
-  @Patch()
-  update(@Body() dto: UpdatePlayerDto) {
-    return this.playersService.update(dto);
   }
 
   @Get()

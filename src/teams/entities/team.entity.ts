@@ -57,20 +57,9 @@ export class Team {
   @JoinColumn()
   teamImage: Media;
 
-  @ManyToMany(() => PlayerEntity, (player) => player.teams, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
-  })
-  @JoinTable({
-    name: 'player_for_team',
-    joinColumn: {
-      name: 'teamId',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'playerId',
-      referencedColumnName: 'id',
-    },
+  @OneToMany(() => PlayerEntity, (player) => player.team, {
+    onDelete: 'CASCADE',
+    eager: true,
   })
   players: PlayerEntity[];
 
