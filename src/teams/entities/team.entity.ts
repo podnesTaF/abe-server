@@ -76,6 +76,7 @@ export class Team {
 
   @ManyToMany(() => Event, (event) => event.teams, {
     onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
   })
   @JoinTable({
     name: 'team_for_event',
