@@ -59,7 +59,6 @@ export class Team {
 
   @ManyToMany(() => PlayerEntity, (player) => player.teams, {
     onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
   })
   @JoinTable({
     name: 'player_for_team',
