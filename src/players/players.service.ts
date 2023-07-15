@@ -25,7 +25,7 @@ export class PlayersService {
   async create(createPlayerDto: CreatePlayerDto) {
     const pbs = [];
 
-    if (!createPlayerDto.personalBests) {
+    if (createPlayerDto.personalBests) {
       for (let i = 0; i < createPlayerDto.personalBests.length; i++) {
         const pb = createPlayerDto.personalBests[i];
         const res = await this.pbService.create(pb);
