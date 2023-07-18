@@ -82,4 +82,9 @@ export class PlayersService {
   findOne(id: number) {
     return `This action returns a #${id} player`;
   }
+
+  async count() {
+    const count = await this.repository.count();
+    return { 'Total players': count };
+  }
 }

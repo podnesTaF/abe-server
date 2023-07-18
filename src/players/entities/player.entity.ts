@@ -37,7 +37,7 @@ export class PlayerEntity {
   })
   country: Country;
 
-  @ManyToOne(() => Media, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Media, { nullable: true })
   image: Media;
 
   @ManyToMany(() => Team, (team) => team.players, {
