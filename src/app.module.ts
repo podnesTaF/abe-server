@@ -19,6 +19,10 @@ import { PrizesModule } from './prizes/prizes.module';
 import { TeamsModule } from './teams/teams.module';
 import { UserModule } from './user/user.module';
 import { MediaModule } from './media/media.module';
+import { NewsModule } from './news/news.module';
+import { HashtagModule } from './hashtag/hashtag.module';
+import { ContentModule } from './content/content.module';
+import { IntegrationModule } from './integration/integration.module';
 
 @Module({
   imports: [
@@ -40,6 +44,10 @@ import { MediaModule } from './media/media.module';
     CountryModule,
     FileModule,
     MediaModule,
+    NewsModule,
+    HashtagModule,
+    ContentModule,
+    IntegrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

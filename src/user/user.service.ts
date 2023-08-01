@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from './entities/user.entity';
 
@@ -12,7 +11,7 @@ export class UserService {
     private repository: Repository<User>,
   ) {}
 
-  create(dto: CreateUserDto) {
+  create(dto: any) {
     return this.repository.save({ ...dto });
   }
 
@@ -31,7 +30,10 @@ export class UserService {
   }
 
   findByCond(cond: LoginUserDto) {
-    return this.repository.findOne({ where: { ...cond } });
+    return this.repository.findOne({
+      where: { ...cond },
+      relations: ['image'],
+    });
   }
 
   async count() {
