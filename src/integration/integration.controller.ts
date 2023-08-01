@@ -6,7 +6,7 @@ export class IntegrationController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post('/race-result')
-  async createRaceResults(@Req() request: Request, @Body() body: any) {
+  async createRaceResults(@Req() request: any, @Body() body: any) {
     console.log('Request:', request);
     console.log('Body:', body);
     // ... Your existing code here
