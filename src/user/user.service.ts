@@ -29,11 +29,17 @@ export class UserService {
     return this.repository.findOne({ where: { id }, relations: ['image'] });
   }
 
-  findByCond(cond: LoginUserDto) {
-    return this.repository.findOne({
+  async findByCond(cond: LoginUserDto) {
+    const user = await this.repository.findOne({
       where: { ...cond },
-      relations: ['image'],
+      relations: ['image', 'club'],
     });
+
+    const isMember = !!user.club;
+
+    delete user.club;
+
+    return { ...user, isMember };
   }
 
   async count() {

@@ -8,7 +8,6 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -45,13 +44,12 @@ export class User {
   @Column({ nullable: true })
   worldAthleticsUrl: string;
 
-  @OneToOne(() => Club, (club) => club.manager, {
+  @ManyToOne(() => Club, (club) => club.members, {
     nullable: true,
     onDelete: 'CASCADE',
   })
   club: Club;
 
-  @ManyToOne(() => Media, { nullable: true })
   @OneToMany(() => Team, (team) => team.manager, { onDelete: 'CASCADE' })
   teams: Team[];
 
