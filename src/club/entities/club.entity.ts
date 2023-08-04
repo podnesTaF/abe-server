@@ -1,3 +1,4 @@
+import { JoinRequest } from 'src/club-requests/entities/club-request.entity';
 import { Media } from 'src/media/entities/media.entity';
 import { Team } from 'src/teams/entities/team.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -5,7 +6,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -33,8 +35,14 @@ export class Club {
   teams: Team[];
 
   @ManyToOne(() => Media, { nullable: true })
-  @JoinColumn()
   logo: Media;
+
+  @ManyToOne(() => Media, { nullable: true })
+  photo: Media;
+
+  @ManyToMany(() => JoinRequest, (joinRequest) => joinRequest.club)
+  @JoinTable()
+  joinRequests: JoinRequest[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

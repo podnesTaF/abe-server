@@ -16,15 +16,46 @@ export class ClubService {
 
   async create(createClubDto: CreateClubDto, managerId: number) {
     const manager = await this.userService.findById(managerId);
-    return this.repository.save({ ...createClubDto, members: [manager] });
+    return this.repository.save({
+      ...createClubDto,
+      members: [manager],
+      logo: createClubDto.logo || null,
+    });
   }
 
-  findAll() {
-    return `This action returns all club`;
+  findAll(queries: any) {
+    const qb = this.repository
+      .createQueryBuilder('club')
+      .leftJoinAndSelect('club.members', 'members')
+      .leftJoinAndSelect('club.logo', 'logo');
+
+    const conditions = [];
+
+    if (queries.name) {
+      conditions.push('club.name LIKE :name');
+    }
+
+    if (queries.country) {
+      conditions.push('club.country LIKE :country');
+    }
+
+    if (conditions.length > 0) {
+      qb.where(conditions.join(' AND '), {
+        name: `%${queries.name || ''}%`,
+        country: `%${queries.country || ''}%`,
+      });
+    }
+
+    return qb.getMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} club`;
+  async findOne(id: number) {
+    const club = await this.repository.findOne({
+      where: { id },
+      relations: ['members', 'photo', 'logo'],
+    });
+
+    return club;
   }
 
   update(id: number, updateClubDto: UpdateClubDto) {

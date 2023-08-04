@@ -35,11 +35,11 @@ export class UserService {
       relations: ['image', 'club'],
     });
 
-    const isMember = !!user.club;
+    const clubId = user.club?.id;
 
     delete user.club;
 
-    return { ...user, isMember };
+    return { ...user, clubId };
   }
 
   async count() {

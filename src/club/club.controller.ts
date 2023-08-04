@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -25,8 +26,8 @@ export class ClubController {
   }
 
   @Get()
-  findAll() {
-    return this.clubService.findAll();
+  findAll(@Query() queries: any) {
+    return this.clubService.findAll(queries);
   }
 
   @Get(':id')
