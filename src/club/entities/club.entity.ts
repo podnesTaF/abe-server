@@ -31,7 +31,7 @@ export class Club {
   @OneToMany(() => User, (user) => user.club)
   members: User[];
 
-  @OneToMany(() => Team, (team) => team.clubs)
+  @OneToMany(() => Team, (team) => team.club)
   teams: Team[];
 
   @ManyToOne(() => Media, { nullable: true })
@@ -43,6 +43,9 @@ export class Club {
   @ManyToMany(() => JoinRequest, (joinRequest) => joinRequest.club)
   @JoinTable()
   joinRequests: JoinRequest[];
+
+  @ManyToMany(() => User, (user) => user.favoriteClubs)
+  favorites: User[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

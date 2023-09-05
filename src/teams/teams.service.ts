@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ClubService } from 'src/club/club.service';
 import { CoachService } from 'src/coach/coach.service';
+import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
 import { CountryService } from 'src/country/country.service';
 import { Event } from 'src/events/entities/event.entity';
 import { PlayersService } from 'src/players/players.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { UpdateTeamDto } from './dto/update-team.dto';
 import { Team } from './entities/team.entity';
 
 @Injectable()
@@ -21,17 +22,20 @@ export class TeamsService {
     private coachService: CoachService,
     private userService: UserService,
     private countryService: CountryService,
+    private clubService: ClubService,
   ) {}
 
   async create(dto: CreateTeamDto, managerId: number) {
     const players = [];
 
     for (let i = 0; i < dto.players.length; i++) {
-      const res = await this.playersService.create(dto.players[i]);
-      players.push(res);
+      const player = await this.userService.findById(dto.players[i]);
+      players.push(player);
     }
 
     const coach = await this.coachService.create(dto.coach);
+
+    const club = await this.clubService.findPure(dto.clubId);
 
     const manager = await this.userService.findById(managerId);
 
@@ -39,7 +43,7 @@ export class TeamsService {
 
     return this.repository.save({
       name: dto.name,
-      club: dto.club,
+      club: club,
       city: dto.city,
       gender: dto.gender,
       country,
@@ -78,7 +82,7 @@ export class TeamsService {
 
   async findAll(queries: any, userId?: number) {
     const page = +queries.page || 1; // Default to page 1 if not provided
-    const limit = +queries.limit || 5;
+    const limit = +queries.limit || 20;
 
     const qb = this.repository
       .createQueryBuilder('team')
@@ -86,7 +90,6 @@ export class TeamsService {
       .leftJoinAndSelect('team.coach', 'coach')
       .leftJoinAndSelect('team.players', 'players')
       .leftJoinAndSelect('team.logo', 'logo')
-      .leftJoinAndSelect('players.personalBests', 'personalBests')
       .leftJoinAndSelect('team.events', 'events');
 
     if (queries.user) {
@@ -185,11 +188,63 @@ export class TeamsService {
     };
   }
 
-  async findAllByUser(userId?: number) {
-    return this.repository.find({
-      where: { manager: { id: +userId } },
-      relations: ['players', 'coach', 'logo', 'country'],
+  async getRegistrationsByPlayerId(playerId: number) {
+    const teams = await this.repository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.events', 'events')
+      .leftJoinAndSelect('events.location', 'location')
+      .leftJoinAndSelect('team.coach', 'coach')
+      .leftJoinAndSelect('team.players', 'players')
+      .where('players.id = :id', { id: playerId })
+      .getMany();
+
+    const transformedData = teams.flatMap((team) => {
+      const eventList = team.events;
+
+      return eventList.map((event) => {
+        const { id, name, gender, city, coach } = team;
+        const teamInfo = { id, name, gender, city, coach };
+
+        const {
+          id: eventId,
+          title,
+          description,
+          startDateTime,
+          endDate,
+          location,
+        } = event;
+        const eventInfo = {
+          id: eventId,
+          title,
+          description,
+          startDateTime,
+          endDate,
+          location,
+        };
+
+        return { event: eventInfo, team: teamInfo };
+      });
     });
+
+    return transformedData;
+  }
+
+  async findAllByUser(userId?: number) {
+    return this.repository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.players', 'player')
+      .leftJoinAndSelect('team.coach', 'coach')
+      .leftJoinAndSelect('team.logo', 'logo')
+      .leftJoinAndSelect('team.country', 'country')
+      .leftJoinAndSelect('team.club', 'club')
+      .leftJoinAndSelect('club.members', 'member')
+      .where('player.id = :runnerId', { runnerId: userId })
+      .orWhere('member.role = :role and member.id = :managerId', {
+        managerId: userId,
+        role: 'manager',
+      })
+      .leftJoinAndSelect('team.players', 'players')
+      .getMany();
   }
 
   findOne(id: number) {
@@ -199,15 +254,47 @@ export class TeamsService {
         'events',
         'players',
         'coach',
+        'club',
         'logo',
         'country',
         'players.image',
+        'club.members',
       ],
     });
   }
 
-  update(id: number, updateTeamDto: UpdateTeamDto) {
-    return `This action updates a #${id} team`;
+  async update(
+    id: number,
+    updateTeamDto: {
+      name: string;
+      city: string;
+      gender: string;
+      coach: CreateCoachDto;
+      players: number[];
+    },
+  ) {
+    const team = await this.repository.findOne({
+      where: { id },
+      relations: ['players', 'coach'],
+    });
+
+    const players = [];
+    for (let i = 0; i < updateTeamDto.players.length; i++) {
+      const player = await this.userService.findById(updateTeamDto.players[i]);
+      players.push(player);
+    }
+
+    const coach = await this.coachService.create(updateTeamDto.coach);
+
+    team.name = updateTeamDto.name || team.name;
+    team.city = updateTeamDto.city || team.city;
+    team.gender = updateTeamDto.gender || team.gender;
+    team.coach = coach || team.coach;
+    team.players = players || team.players;
+
+    return this.repository.save({
+      ...team,
+    });
   }
 
   remove(id: number) {
@@ -230,5 +317,14 @@ export class TeamsService {
     });
 
     return res;
+  }
+
+  findAllSnippetByEventId(eventId: number) {
+    return this.repository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.events', 'event')
+      .where('event.id = :eventId', { eventId })
+      .select(['team.id', 'team.name'])
+      .getMany();
   }
 }

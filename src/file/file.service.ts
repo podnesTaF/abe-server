@@ -1,17 +1,22 @@
 import { Storage } from '@google-cloud/storage';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import sharp from 'sharp';
+import { Event } from 'src/events/entities/event.entity';
 import { Media } from 'src/media/entities/media.entity';
 import { MediaService } from 'src/media/media.service';
+import { ViewerRegistration } from 'src/viewer-registrations/entities/viewer-registration.entity';
 import * as uuid from 'uuid';
 import { googleCloudStorageConfig } from './google-cloud-storage.config';
+import { getPDFDocument } from './utils/get-pdf-document';
 
 export enum FileType {
   IMAGE = 'image',
   AVATAR = 'avatar',
+  QRCODE = 'qrcode',
+  PDF = 'pdf',
 }
 
-const bucketBaseUrl =
+export const bucketBaseUrl =
   'https://storage.googleapis.com/' + googleCloudStorageConfig.bucketName;
 
 @Injectable()
@@ -20,16 +25,17 @@ export class FileService {
 
   async uploadFileToStorage(
     type: FileType,
-    file: any,
+    buffer: Buffer,
+    fileName: string,
     storage: Storage,
   ): Promise<Media> {
     try {
-      const fileExtension = file.originalname.split('.').pop();
-      const fileName = uuid.v4().toString() + '.' + fileExtension;
+      const fileExtension = fileName.split('.').pop();
+      const fileDBName = uuid.v4().toString() + '.' + fileExtension;
 
       const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
 
-      const fileUpload = bucket.file(`${type}/large/${fileName}`);
+      const fileUpload = bucket.file(`${type}/large/${fileDBName}`);
       const stream = fileUpload.createWriteStream({
         resumable: false,
         gzip: true,
@@ -43,13 +49,11 @@ export class FileService {
         console.log(`File uploaded successfully: ${fileName}`);
       });
 
-      stream.end(file.buffer);
+      stream.end(buffer);
 
       // Create a smaller version of the image for preview
-      const smallFileName = 'small_' + fileName;
-      const smallFileBuffer = await sharp(file.buffer)
-        .resize(200, 200)
-        .toBuffer();
+      const smallFileName = 'small_' + fileDBName;
+      const smallFileBuffer = await sharp(buffer).resize(200, 200).toBuffer();
 
       const smallFileUpload = bucket.file(`${type}/small/${smallFileName}`);
       const smallStream = smallFileUpload.createWriteStream({
@@ -68,8 +72,8 @@ export class FileService {
       smallStream.end(smallFileBuffer);
 
       return this.mediaService.create({
-        title: file.originalname,
-        mediaUrl: `${bucketBaseUrl}/${type}/large/${fileName}`,
+        title: fileName,
+        mediaUrl: `${bucketBaseUrl}/${type}/large/${fileDBName}`,
         smallUrl: `${bucketBaseUrl}/${type}/small/${smallFileName}`,
         mediaType: type,
       });
@@ -77,6 +81,20 @@ export class FileService {
       console.log(e);
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  async generatePDFforViewer(
+    event: Event,
+    viewer: ViewerRegistration,
+    qr: Media,
+    storage: Storage,
+  ): Promise<Media> {
+    const mediaUrl = await getPDFDocument(event, viewer, qr);
+    return this.mediaService.create({
+      title: `${event.title}_${viewer.firstName}_${viewer.lastName}`,
+      mediaUrl,
+      mediaType: FileType.PDF,
+    });
   }
 
   async getAllSmallImagesFromStorage(storage: Storage): Promise<string[]> {
@@ -94,12 +112,15 @@ export class FileService {
   async deleteFileFromStorage(
     imagePath: string,
     storage: Storage,
+    mediaId: number,
   ): Promise<boolean> {
     try {
       const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
       const file = bucket.file(imagePath);
 
       await file.delete();
+
+      await this.mediaService.deleteMedia(mediaId);
 
       return true;
     } catch (e) {

@@ -7,15 +7,13 @@ import {
 } from 'class-validator';
 import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
 import { Media } from 'src/media/entities/media.entity';
-import { CreatePlayerDto } from 'src/players/dto/create-player.dto';
 
 export class CreateTeamDto {
   @IsString()
   name: string;
 
   @IsString()
-  @IsOptional()
-  club?: string;
+  clubId: number;
 
   @IsString()
   gender: string;
@@ -38,5 +36,5 @@ export class CreateTeamDto {
   coach: CreateCoachDto;
 
   @IsArray()
-  players: CreatePlayerDto[];
+  players: number[];
 }

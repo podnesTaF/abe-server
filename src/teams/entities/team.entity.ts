@@ -3,7 +3,8 @@ import { Coach } from 'src/coach/entities/coach.entity';
 import { Country } from 'src/country/entity/country.entity';
 import { Event } from 'src/events/entities/event.entity';
 import { Media } from 'src/media/entities/media.entity';
-import { PlayerEntity } from 'src/players/entities/player.entity';
+import { Race } from 'src/race/entities/race.entity';
+import { TeamResult } from 'src/team-results/entities/team-results.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
@@ -37,11 +38,8 @@ export class Team {
   @ManyToOne(() => User, (user) => user.teams, { onDelete: 'CASCADE' })
   manager: User;
 
-  @OneToMany(() => Club, (club) => club.teams, { nullable: true })
-  clubs: Club[];
-
-  @Column()
-  club: string;
+  @ManyToOne(() => Club, (club) => club.teams, { nullable: true })
+  club: Club;
 
   @OneToOne(() => Coach, {
     onDelete: 'CASCADE',
@@ -57,24 +55,23 @@ export class Team {
   @JoinColumn()
   teamImage: Media;
 
-  @ManyToMany(() => PlayerEntity, (player) => player.teams, {
+  @ManyToMany(() => User, (user) => user.teamsAsRunner, {
     onDelete: 'NO ACTION',
   })
   @JoinTable({
-    name: 'player_for_team',
+    name: 'runner_for_team',
     joinColumn: {
       name: 'teamId',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
-      name: 'playerId',
+      name: 'runnerId',
       referencedColumnName: 'id',
     },
   })
-  players: PlayerEntity[];
+  players: User[];
 
   @ManyToMany(() => Event, (event) => event.teams, {
-    onUpdate: 'NO ACTION',
     onDelete: 'CASCADE',
   })
   @JoinTable({
@@ -89,4 +86,16 @@ export class Team {
     },
   })
   events: Event[];
+
+  @OneToMany(() => Race, (race) => race.winner, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  wonRaces: Race[];
+
+  @OneToMany(() => TeamResult, (teamResult) => teamResult.team)
+  results: TeamResult[];
+
+  @ManyToMany(() => Race, (race) => race.teams, { onDelete: 'CASCADE' })
+  races: Race[];
 }

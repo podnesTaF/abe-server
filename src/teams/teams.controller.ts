@@ -3,12 +3,14 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { TeamsService } from './teams.service';
 
@@ -48,10 +50,23 @@ export class TeamsController {
     return this.teamsService.findAll(queries, +req?.user?.id);
   }
 
-  @Get('/user')
+  @Get('/snippet/:eventId')
+  findAllSnippet(@Param('eventId') eventId: string) {
+    return this.teamsService.findAllSnippetByEventId(+eventId);
+  }
+
+  @Get('/my')
   @UseGuards(JwtAuthGuard)
-  findUsers(@Request() req) {
-    return this.teamsService.findAllByUser(+req?.user?.id);
+  findMyTeams(@Request() req: { user?: { id?: number } }) {
+    if (!req.user) {
+      throw new Error('User not found');
+    }
+    return this.teamsService.findAllByUser(+req.user.id);
+  }
+
+  @Get('/user/:id')
+  findUsers(@Param('id') id: string) {
+    return this.teamsService.findAllByUser(+id);
   }
 
   @Get('/registrations')
@@ -61,6 +76,12 @@ export class TeamsController {
     @Query() query: { limit?: string; page?: string },
   ) {
     return this.teamsService.getRegistrations(+req.user.id, query);
+  }
+
+  @Get('/user-registrations')
+  @UseGuards(JwtAuthGuard)
+  findAllRegByUser(@Request() req) {
+    return this.teamsService.getRegistrationsByPlayerId(+req.user.id);
   }
 
   @Get(':id')
@@ -76,5 +97,20 @@ export class TeamsController {
   @Get('count/all')
   countAll() {
     return this.teamsService.countAll();
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      name: string;
+      city: string;
+      gender: string;
+      coach: CreateCoachDto;
+      players: number[];
+    },
+  ) {
+    return this.teamsService.update(+id, dto);
   }
 }
