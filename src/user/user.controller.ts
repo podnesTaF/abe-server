@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Request,
   UseGuards,
@@ -24,6 +25,16 @@ export class UserController {
   @Get('/athletes')
   getAllRunners(@Query() queries: any) {
     return this.userService.findAllRunners(queries);
+  }
+
+  @Post('/points/calculate')
+  updatePoints(@Query('gender') gender: string) {
+    return this.userService.calculateUsersPoints(gender);
+  }
+
+  @Post('/ranking/calculate')
+  updateRanking(@Query('gender') gender: string) {
+    return this.userService.updateRanking(gender);
   }
 
   @Get('/me')
