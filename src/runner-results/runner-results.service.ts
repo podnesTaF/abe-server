@@ -103,6 +103,7 @@ export class RunnerResultsService {
       .leftJoin('teamResult.race', 'race')
       .leftJoin('race.event', 'event')
       .leftJoin('race.winner', 'winner')
+      .leftJoin('runnerResult.pbForRunner', 'pbForRunner')
       .leftJoin('runnerResult.runner', 'runner')
       .where('runner.id = :userId', { userId })
       .offset(offset)
@@ -119,6 +120,7 @@ export class RunnerResultsService {
         'event.title',
         'winner.id',
         'team.id',
+        'pbForRunner.id',
       ])
       .getRawMany();
 

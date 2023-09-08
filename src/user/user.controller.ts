@@ -75,6 +75,11 @@ export class UserController {
     return this.userService.updateProfileData(req.user.id, body);
   }
 
+  @Patch('/personal-bests')
+  updatePersonalBests() {
+    return this.userService.updatePersonalBestsForAllRunners();
+  }
+
   @Get('count')
   count() {
     return this.userService.count();

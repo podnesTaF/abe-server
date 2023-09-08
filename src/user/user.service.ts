@@ -87,7 +87,14 @@ export class UserService {
   async findById(id: number) {
     const user = await this.repository.findOne({
       where: { id },
-      relations: ['image', 'country', 'club', 'favoriteClubs', 'personalBests'],
+      relations: [
+        'image',
+        'country',
+        'club',
+        'favoriteClubs',
+        'personalBests',
+        'results',
+      ],
     });
     return user;
   }
@@ -281,6 +288,29 @@ export class UserService {
 
     runners.forEach((runner, idx) => {
       runner.rank = idx + 1;
+    });
+
+    return this.repository.save(runners);
+  }
+
+  async updatePersonalBestsForAllRunners() {
+    let runners = await this.repository.find({
+      where: { role: 'runner' },
+      relations: ['results', 'personalBests'],
+    });
+
+    runners = runners.map((runner) => {
+      const bestResults = {};
+
+      for (const result of runner.results) {
+        if (
+          !bestResults[result.distance] ||
+          bestResults[result.distance].finalResultInMs > result.finalResultInMs
+        ) {
+          bestResults[result.distance] = result;
+        }
+      }
+      return { ...runner, personalBests: Object.values(bestResults) };
     });
 
     return this.repository.save(runners);
