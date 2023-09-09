@@ -29,6 +29,7 @@ import { RaceModule } from './race/race.module';
 import { TeamResultsModule } from './team-results/team-results.module';
 import { RunnerResultsModule } from './runner-results/runner-results.module';
 import { SplitsModule } from './splits/splits.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { SplitsModule } from './splits/splits.module';
     TeamResultsModule,
     RunnerResultsModule,
     SplitsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
