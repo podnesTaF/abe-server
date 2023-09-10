@@ -22,7 +22,7 @@ export class AdminService {
   }
 
   findAll() {
-    return `This action returns all admin`;
+    return this.adminRepository.find();
   }
 
   findOne(id: number) {

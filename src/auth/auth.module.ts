@@ -11,8 +11,10 @@ import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
+import { LocalAdminStrategy } from './strategies/local-admin.strategy';
+import { LocalStrategy } from './strategies/local-user.strategy';
 
 @Module({
   imports: [
@@ -29,9 +31,12 @@ import { LocalStrategy } from './strategies/local.strategy';
     AuthService,
     LocalStrategy,
     JwtStrategy,
+    LocalAdminStrategy,
     CountryService,
     AdminAuthService,
     AdminService,
+    RolesGuard,
   ],
+  exports: [PassportModule, JwtModule],
 })
 export class AuthModule {}

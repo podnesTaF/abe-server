@@ -25,7 +25,7 @@ export class AdminAuthService {
   }
 
   generateJwtToken(data: { id: number; email: string }) {
-    const payload = { email: data.email, sub: data.id };
+    const payload = { email: data.email, sub: data.id, roles: ['admin'] };
     return this.jwtService.sign(payload);
   }
 

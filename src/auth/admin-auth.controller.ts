@@ -1,13 +1,13 @@
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { AdminAuthService } from './admin-auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('admin-auth')
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(AuthGuard('local-admin'))
   @Post('login')
   async login(@Request() req) {
     return this.adminAuthService.login(req.user);
