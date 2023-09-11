@@ -93,11 +93,12 @@ export class NewsService {
       ),
     });
 
-    // const relatedEvents: Event[] = news.hashtags.reduce((acc, hashtag) => {
-    //   return [...acc, ...hashtag.events];
-    // }, []);
-
-    delete news.hashtags;
+    news.hashtags = news.hashtags.map((hashtag) => ({
+      id: hashtag.id,
+      name: hashtag.name,
+      news: null,
+      events: null,
+    }));
 
     return {
       ...news,
@@ -143,9 +144,36 @@ export class NewsService {
       relations: ['hashtags', 'contents'],
     });
 
-    news.contents = body.contents || news.contents;
-    news.hashtags = body.hashtags || news.hashtags;
+    const newHashtags = [];
+    for (const hashtag of body.hashtags) {
+      if (!hashtag.id) {
+        const newHashtag = await this.hashtagService.create({
+          name: hashtag.name,
+        });
+        newHashtags.push(newHashtag);
+      } else {
+        newHashtags.push(hashtag);
+      }
+    }
+
+    const newContents = [];
+
+    for (const content of body.contents) {
+      if (!content.id) {
+        const newContent = await this.contentService.create(
+          { ...content },
+          news.id,
+        );
+        newContents.push(newContent);
+      } else {
+        newContents.push(content);
+      }
+    }
+
+    news.hashtags = newHashtags;
+    news.contents = newContents;
     news.title = body.title || news.title;
+    news.mainImage = body.mainImage || news.mainImage;
 
     return this.repository.save(news);
   }
