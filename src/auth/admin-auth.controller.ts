@@ -1,7 +1,10 @@
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { CreateAdminDto } from 'src/admin/dto/create-admin.dto';
 import { AdminAuthService } from './admin-auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './roles/roles.guard';
 
 @Controller('admin-auth')
 export class AdminAuthController {
@@ -13,9 +16,10 @@ export class AdminAuthController {
     return this.adminAuthService.login(req.user);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Post('register')
-  register(@Body() dto: CreateUserDto) {
-    // You need to adapt this to the admin registration logic using adminService
+  register(@Body() dto: CreateAdminDto) {
     return this.adminAuthService.register(dto);
   }
 }

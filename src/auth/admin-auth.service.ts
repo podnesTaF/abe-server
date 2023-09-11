@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AdminService } from 'src/admin/admin.service';
@@ -38,17 +38,22 @@ export class AdminAuthService {
   }
 
   async register(dto: CreateAdminDto) {
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const admin = await this.adminService.create({
-      email: dto.email,
-      password: hashedPassword,
-      name: dto.name,
-      surname: dto.surname,
-    });
-    // Return the admin data along with a JWT token
-    return {
-      ...admin,
-      token: this.generateJwtToken(admin),
-    };
+    try {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      const admin = await this.adminService.create({
+        email: dto.email,
+        password: hashedPassword,
+        name: dto.name,
+        surname: dto.surname,
+      });
+
+      return {
+        ...admin,
+        token: this.generateJwtToken(admin),
+      };
+    } catch (error) {
+      console.log(error.message);
+      throw new BadRequestException('Registering admin error');
+    }
   }
 }

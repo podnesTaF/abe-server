@@ -13,7 +13,6 @@ export class AdminService {
   ) {}
 
   create(createAdminDto: CreateAdminDto) {
-    console.log(createAdminDto);
     return this.adminRepository.save(createAdminDto);
   }
 
