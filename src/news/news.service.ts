@@ -25,9 +25,11 @@ export class NewsService {
   async getNewsPreviews({
     relatedNews,
     itemsAmount,
+    textLength,
   }: {
     relatedNews?: News[];
     itemsAmount?: number;
+    textLength?: number;
   }) {
     const newsList = relatedNews ? relatedNews : await this.getNews();
 
@@ -38,8 +40,8 @@ export class NewsService {
       let previewText = '';
       if (content) {
         previewText =
-          content.text.length > 80
-            ? content.text.substring(0, 80) + '...'
+          content.text.length > textLength || 80
+            ? content.text.substring(0, textLength || 80) + '...'
             : content.text;
       }
 
@@ -110,6 +112,7 @@ export class NewsService {
 
     const news = await this.repository.save({
       title: dto.title,
+      mainImage: dto.mainImage,
     });
 
     for (const content of dto.contents) {
