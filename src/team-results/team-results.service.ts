@@ -58,10 +58,7 @@ export class TeamResultsService {
     };
   }
 
-  async getClubResults(
-    clubId: number,
-    queries: { limit?: number; page?: number },
-  ) {
+  async getClubResults(clubId: number, queries: any) {
     const limit = +queries.limit || 10;
     const page = +queries.page || 1;
     const offset = (page - 1) * limit;
@@ -73,14 +70,26 @@ export class TeamResultsService {
       .where('club.id = :clubId', { clubId })
       .getCount();
 
-    const res = await this.repository
+    const qb = this.repository
       .createQueryBuilder('teamResult')
       .leftJoinAndSelect('teamResult.team', 'team')
       .leftJoinAndSelect('teamResult.race', 'race')
       .leftJoin('race.event', 'event')
       .leftJoin('race.winner', 'winner')
-      .where('team.clubId = :clubId', { clubId })
-      .offset(offset)
+      .where('team.clubId = :clubId', { clubId });
+
+    if (queries.year) {
+      const year = +queries.year;
+      if (!isNaN(year)) {
+        qb.andWhere('YEAR(event.startDateTime) = :year', { year });
+      }
+    }
+
+    if (queries.category) {
+      qb.andWhere('event.category = :category', { category: queries.category });
+    }
+
+    qb.offset(offset)
       .limit(limit)
       .select([
         'teamResult.id',
@@ -94,8 +103,9 @@ export class TeamResultsService {
         'winner.id',
         'race.startTime',
         'event.title',
-      ])
-      .getRawMany();
+      ]);
+
+    const res = await qb.getRawMany();
 
     return {
       results: res,

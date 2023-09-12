@@ -29,10 +29,7 @@ export class TeamResultsController {
   }
 
   @Get('/club/:clubId')
-  getClubResults(
-    @Param('clubId') clubId: string,
-    @Query() queries: { limit?: number; page?: number },
-  ) {
+  getClubResults(@Param('clubId') clubId: string, @Query() queries: any) {
     return this.teamResultsService.getClubResults(+clubId, queries);
   }
 
