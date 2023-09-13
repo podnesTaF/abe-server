@@ -25,11 +25,22 @@ export class TeamResultsService {
       where: { id: dto.teamId },
     });
 
-    return this.repository.save({
+    const teamResult = await this.repository.save({
       resultInMs: dto.resultInMs,
       race,
       team,
     });
+
+    if (team.personalBest.resultInMs > teamResult.resultInMs) {
+      team.personalBest = teamResult;
+      await this.teamRepository.save(team);
+    }
+
+    await this.changeTotalPointByAddedResult(teamResult);
+
+    await this.updateRanking(teamResult.team.gender);
+
+    return this.repository.save(teamResult);
   }
 
   async getAllTeamResults(queries: { limit?: number; page?: number }) {
@@ -196,5 +207,38 @@ export class TeamResultsService {
     }
 
     return this.repository.save(teamResult);
+  }
+
+  async updateRanking(gender: string) {
+    let teams = await this.teamRepository.find({
+      where: { gender },
+    });
+
+    teams = teams
+      .filter((t) => t.totalPoints > 0)
+      .sort((a, b) => a.totalPoints - b.totalPoints);
+
+    teams.forEach((team, idx) => {
+      team.rank = idx + 1;
+    });
+
+    return this.teamRepository.save(teams);
+  }
+
+  async changeTotalPointByAddedResult(result: TeamResult) {
+    const team = await this.teamRepository.findOne({
+      where: { id: result.team.id },
+      relations: ['results'],
+    });
+
+    const resLength = team.results.length;
+
+    if (resLength === 0) {
+      team.totalPoints = result.resultInMs;
+    } else {
+      team.totalPoints += result.resultInMs / resLength;
+    }
+
+    return this.teamRepository.save(team);
   }
 }

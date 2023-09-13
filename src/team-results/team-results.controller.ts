@@ -41,6 +41,11 @@ export class TeamResultsController {
     return this.teamResultsService.getTeamResults(+teamId, queries);
   }
 
+  @Patch('/ranking')
+  updateRanking(@Query('gender') gender?: string) {
+    return this.teamResultsService.updateRanking(gender || 'male');
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
