@@ -49,10 +49,7 @@ export class Team {
   })
   club: Club;
 
-  @ManyToOne(() => Coach, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn()
+  @ManyToOne(() => Coach, (coach) => coach.teams)
   coach: Coach;
 
   @ManyToOne(() => Media, { nullable: true })
