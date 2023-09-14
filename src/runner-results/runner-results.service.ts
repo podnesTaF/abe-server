@@ -43,11 +43,11 @@ export class RunnerResultsService {
       finalResultInMs: dto.finalResultInMs,
     });
 
-    runner.personalBests = runner.personalBests || [];
+    // runner.personalBests = runner.personalBests || [];
 
-    const pbIdx = runner.personalBests.findIndex(
-      (pb) => pb.distance === dto.distance,
-    );
+    // const pbIdx = runner.personalBests.findIndex(
+    //   (pb) => pb.distance === dto.distance,
+    // );
 
     // if (pbIdx !== -1) {
     //   if (runner.personalBests[pbIdx].finalResultInMs > dto.finalResultInMs) {
