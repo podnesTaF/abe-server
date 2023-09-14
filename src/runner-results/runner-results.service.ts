@@ -27,7 +27,7 @@ export class RunnerResultsService {
     });
 
     const runner = await this.runnerRepository.findOne({
-      relations: ['personalBest'],
+      relations: ['personalBests'],
       where: { id: dto.runnerId },
     });
 
@@ -43,21 +43,21 @@ export class RunnerResultsService {
       finalResultInMs: dto.finalResultInMs,
     });
 
-    // runner.personalBests = runner.personalBests || [];
+    runner.personalBests = runner.personalBests || [];
 
-    // const pbIdx = runner.personalBests.findIndex(
-    //   (pb) => pb.distance === dto.distance,
-    // );
+    const pbIdx = runner.personalBests.findIndex(
+      (pb) => pb.distance === dto.distance,
+    );
 
-    // if (pbIdx !== -1) {
-    //   if (runner.personalBests[pbIdx].finalResultInMs > dto.finalResultInMs) {
-    //     runner.personalBests[pbIdx].finalResultInMs = dto.finalResultInMs;
-    //     await this.runnerRepository.save(runner);
-    //   }
-    // } else {
-    //   runner.personalBests.push(runnerResult);
-    //   await this.runnerRepository.save(runner);
-    // }
+    if (pbIdx !== -1) {
+      if (runner.personalBests[pbIdx].finalResultInMs > dto.finalResultInMs) {
+        runner.personalBests[pbIdx].finalResultInMs = dto.finalResultInMs;
+        await this.runnerRepository.save(runner);
+      }
+    } else {
+      runner.personalBests.push(runnerResult);
+      await this.runnerRepository.save(runner);
+    }
 
     await this.userService.changeTotalPointsByAddedResult(runnerResult);
 
