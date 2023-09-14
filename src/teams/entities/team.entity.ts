@@ -49,7 +49,7 @@ export class Team {
   })
   club: Club;
 
-  @OneToOne(() => Coach, {
+  @ManyToOne(() => Coach, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
