@@ -15,7 +15,7 @@ export class SplitsService {
     return this.repository.save({
       ...dto,
       runnerResultId,
-      resutlsInMs: dto.timeInMs,
+      resultInMs: dto.timeInMs,
     });
   }
 }
