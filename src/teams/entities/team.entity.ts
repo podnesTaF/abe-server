@@ -46,7 +46,6 @@ export class Team {
 
   @ManyToOne(() => Club, (club) => club.teams, {
     nullable: true,
-    onDelete: 'CASCADE',
   })
   club: Club;
 
@@ -105,7 +104,7 @@ export class Team {
   @OneToMany(() => TeamResult, (teamResult) => teamResult.team)
   results: TeamResult[];
 
-  @ManyToMany(() => Race, (race) => race.teams, { onDelete: 'CASCADE' })
+  @ManyToMany(() => Race, (race) => race.teams)
   races: Race[];
 
   @OneToOne(() => TeamResult, {
