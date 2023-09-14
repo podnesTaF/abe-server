@@ -44,7 +44,10 @@ export class Team {
   @ManyToOne(() => User, (user) => user.teams, { onDelete: 'CASCADE' })
   manager: User;
 
-  @ManyToOne(() => Club, (club) => club.teams, { nullable: true })
+  @ManyToOne(() => Club, (club) => club.teams, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   club: Club;
 
   @OneToOne(() => Coach, {
@@ -62,7 +65,7 @@ export class Team {
   teamImage: Media;
 
   @ManyToMany(() => User, (user) => user.teamsAsRunner, {
-    onDelete: 'NO ACTION',
+    onDelete: 'CASCADE',
   })
   @JoinTable({
     name: 'runner_for_team',
@@ -107,6 +110,7 @@ export class Team {
 
   @OneToOne(() => TeamResult, {
     nullable: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn()
   personalBest: TeamResult;
