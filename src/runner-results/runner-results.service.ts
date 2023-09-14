@@ -49,15 +49,15 @@ export class RunnerResultsService {
       (pb) => pb.distance === dto.distance,
     );
 
-    if (pbIdx !== -1) {
-      if (runner.personalBests[pbIdx].finalResultInMs > dto.finalResultInMs) {
-        runner.personalBests[pbIdx].finalResultInMs = dto.finalResultInMs;
-        await this.runnerRepository.save(runner);
-      }
-    } else {
-      runner.personalBests.push(runnerResult);
-      await this.runnerRepository.save(runner);
-    }
+    // if (pbIdx !== -1) {
+    //   if (runner.personalBests[pbIdx].finalResultInMs > dto.finalResultInMs) {
+    //     runner.personalBests[pbIdx].finalResultInMs = dto.finalResultInMs;
+    //     await this.runnerRepository.save(runner);
+    //   }
+    // } else {
+    //   runner.personalBests.push(runnerResult);
+    //   await this.runnerRepository.save(runner);
+    // }
 
     await this.userService.changeTotalPointsByAddedResult(runnerResult);
 
