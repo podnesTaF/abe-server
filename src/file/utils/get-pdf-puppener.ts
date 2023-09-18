@@ -28,7 +28,10 @@ export const generatePDFFromHTML = async (
   htmlContent: string,
   pdfFileName: string,
 ) => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: 'new',
+  });
   const page = await browser.newPage();
 
   // Set the page content to your HTML content
