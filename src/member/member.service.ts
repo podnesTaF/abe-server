@@ -121,19 +121,6 @@ export class MemberService {
 
       fullMember.verified = true;
 
-      if (ticket) {
-        const registration = await this.viewerRegistrationService.create({
-          viewerId: fullMember.id,
-          firstName: fullMember.firstName,
-          lastName: fullMember.lastName,
-          email: fullMember.email,
-        });
-
-        if (!registration) {
-          console.log('error registering for event');
-        }
-      }
-
       await this.verifyRepository.delete(token);
 
       return this.repository.save(fullMember);
