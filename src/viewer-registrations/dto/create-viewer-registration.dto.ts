@@ -10,6 +10,10 @@ export class CreateViewerRegistrationDto {
   @IsString()
   email: string;
 
+  @IsString()
+  @IsOptional()
+  gender?: string;
+
   @IsNumber()
   @IsOptional()
   viewerId?: number;

@@ -140,7 +140,13 @@ export const getHTMLContent = (
                 #${viewer.id}
               </h3>
               <h3 class="">
-                <span class="subname">Monsieur.</span>
+                <span class="subname">${
+                  viewer.gender === 'male'
+                    ? 'Monsieur'
+                    : viewer.gender === 'female'
+                    ? 'Madame'
+                    : 'Visiteur'
+                }.</span>
                 <br />
               ${viewer.firstName} ${viewer.lastName}
               </h3>

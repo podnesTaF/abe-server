@@ -17,6 +17,9 @@ export class ViewerRegistration {
   @Column()
   email: string;
 
+  @Column({ nullable: true })
+  gender: string;
+
   @ManyToOne(() => Member, (member) => member.viewerRegistrations, {
     nullable: true,
   })
