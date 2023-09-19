@@ -53,6 +53,14 @@ export const getHTMLContent = (
   viewer: ViewerRegistration,
   qrCodeUrl: string,
 ) => {
+  const imageEl = `
+  <img
+  src="${qrCodeUrl}"
+  alt="qr"
+  width="240"
+  height="240"
+/>
+  `;
   return `
   <!DOCTYPE html>
   <html>
@@ -164,12 +172,7 @@ export const getHTMLContent = (
           </div>
           <div class="ticket">
             <h3 class="title">Votre billet d'entrée</h3>
-            <img
-              src="${qrCodeUrl}"
-              alt="qr"
-              width="240"
-              height="240"
-            />
+           ${imageEl}
           </div>
         </div>
       </div>
