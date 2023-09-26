@@ -17,7 +17,7 @@ export class RunnerResult {
   @Column()
   distance: number;
 
-  @Column()
+  @Column({ nullable: true })
   finalResultInMs: number;
 
   @Column({ nullable: true })

@@ -17,5 +17,6 @@ import { RunnerResultsService } from './runner-results.service';
   ],
   controllers: [RunnerResultsController],
   providers: [RunnerResultsService, SplitsService, UserService, CountryService],
+  exports: [RunnerResultsService],
 })
 export class RunnerResultsModule {}

@@ -39,6 +39,7 @@ export class RaceService {
       startTime: dto.startTime,
       teams,
       event,
+      name: dto.name,
     });
   }
 

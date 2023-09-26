@@ -21,9 +21,9 @@ export class RunnerResultsService {
     private userService: UserService,
   ) {}
 
-  async create(dto: CreateRunnerResultDto) {
+  async create(dto: CreateRunnerResultDto, teamResultId: number) {
     const teamResult = await this.teamResRepository.findOne({
-      where: { id: dto.teamResultId },
+      where: { id: teamResultId },
     });
 
     const runner = await this.runnerRepository.findOne({
