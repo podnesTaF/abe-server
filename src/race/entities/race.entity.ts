@@ -22,7 +22,7 @@ export class Race {
   @Column()
   name: string;
 
-  @ManyToMany(() => Team, (team) => team.races, { onDelete: 'CASCADE' })
+  @ManyToMany(() => Team, (team) => team.races)
   @JoinTable()
   teams: Team[];
 

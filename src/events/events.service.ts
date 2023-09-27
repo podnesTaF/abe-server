@@ -106,6 +106,10 @@ export class EventsService {
       });
     }
 
+    if (query.finished) {
+      qb.andWhere('event.endDate < :now', { now: new Date() });
+    }
+
     const totalItems = await qb.getCount();
 
     const totalPages = Math.ceil(totalItems / limit);
