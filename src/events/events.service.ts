@@ -461,7 +461,7 @@ export const addToPodium = (
       podium[gender][1] = teamResult;
     } else if (
       !podium[gender][2] ||
-      teamResult.resultInMs < podium.male[2].resultInMs
+      teamResult.resultInMs < podium[gender][2].resultInMs
     ) {
       podium[gender][3] = JSON.parse(JSON.stringify(podium[gender][2]));
       podium[gender][2] = teamResult;
