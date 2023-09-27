@@ -211,6 +211,7 @@ export class EventsService {
     const event = await this.repository.findOne({
       where: { id: eventId },
       relations: [
+        'introImage',
         'races',
         'races.winner',
         'races.teams',
@@ -355,6 +356,7 @@ export class EventsService {
 
     return {
       eventTitle: event.title,
+      introImage: event.introImage,
       podium,
       bestSportsmen,
       bestJokerPair,
