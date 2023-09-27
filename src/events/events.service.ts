@@ -4,6 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CountryService } from 'src/country/country.service';
 import { LocationsService } from 'src/locations/locations.service';
 import { PrizesService } from 'src/prizes/prizes.service';
+import { Race } from 'src/race/entities/race.entity';
+import { RunnerResult } from 'src/runner-results/entities/runner-results.entity';
+import { Team } from 'src/teams/entities/team.entity';
+import { User } from 'src/user/entities/user.entity';
 import { formatDate } from 'src/utils/date-formater';
 import { Repository } from 'typeorm';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -192,6 +196,171 @@ export class EventsService {
     return this.repository.findOne({ where: { id } });
   }
 
+  async getAllResults(eventId: number) {
+    // const qb = this.repository
+    //   .createQueryBuilder('event')
+    //   .leftJoinAndSelect('event.races', 'races')
+    //   .leftJoinAndSelect('races.teamResults', 'teamResults')
+    //   .leftJoinAndSelect('teamResults.team', 'team')
+    //   .leftJoinAndSelect('team.logo', 'logo')
+    //   .leftJoinAndSelect('teamResults.runnerResults', 'runnerResults')
+    //   .leftJoinAndSelect('runnerResults.runner', 'runner')
+    //   .leftJoinAndSelect('runner', 'runner.image')
+    //   .where('event.id = :eventId', { eventId });
+
+    const event = await this.repository.findOne({
+      where: { id: eventId },
+      relations: [
+        'races',
+        'races.winner',
+        'races.teams',
+        'races.teamResults',
+        'races.teamResults.team',
+        'races.teamResults.team.logo',
+        'races.teamResults.runnerResults',
+        'races.teamResults.runnerResults.runner',
+        'races.teamResults.runnerResults.runner.image',
+      ],
+    });
+
+    const mensRaces: Race[] = [];
+
+    const womensRaces: Race[] = [];
+
+    event.races.forEach((race) => {
+      if (race.teams.some((team) => team.gender === 'male')) {
+        mensRaces.push(race);
+      } else {
+        womensRaces.push(race);
+      }
+    });
+
+    // I need to map through mensRaces and count the total time for each team and then sort them by time.
+
+    const teamResults: {
+      male: {
+        [teamId: number]: {
+          team: Team;
+          resultInMs: number;
+        };
+      };
+      female: {
+        [teamId: number]: {
+          team: Team;
+          resultInMs: number;
+        };
+      };
+    } = {
+      male: {},
+      female: {},
+    };
+
+    addTeamResults(mensRaces, teamResults, 'male');
+    addTeamResults(womensRaces, teamResults, 'female');
+
+    const podium = {
+      male: {
+        1: null,
+        2: null,
+        3: null,
+      },
+      female: {
+        1: null,
+        2: null,
+        3: null,
+      },
+    };
+
+    addToPodium(podium, teamResults, 'male');
+    addToPodium(podium, teamResults, 'female');
+
+    const bestSportsmen: {
+      [gender: string]: {
+        runner: User;
+        finalResultInMs: number;
+      };
+    } = {};
+
+    event.races.forEach((race) => {
+      race.teamResults.forEach((teamResult) => {
+        teamResult.runnerResults.forEach((runnerResult) => {
+          const currBest = bestSportsmen[runnerResult.runner.gender];
+          if (runnerResult.distance !== 160934) return;
+          if (
+            !currBest ||
+            runnerResult.finalResultInMs < currBest.finalResultInMs
+          ) {
+            bestSportsmen[runnerResult.runner.gender] = runnerResult;
+          }
+        });
+      });
+    });
+
+    const bestJokerPair: {
+      [gender: string]: {
+        runners: RunnerResult[];
+        finalResultInMs: number;
+      };
+    } = {};
+
+    event.races.forEach((race) => {
+      race.teamResults.forEach((teamResult) => {
+        const pacersJokers = teamResult.runnerResults.filter(
+          (res) => res.runnerType,
+        );
+
+        const firstPair = pacersJokers.filter(
+          (res) => res.runnerType === 'pacer-1' || res.runnerType === 'joker-1',
+        );
+
+        const secondPair = pacersJokers.filter(
+          (res) => res.runnerType === 'pacer-2' || res.runnerType === 'joker-2',
+        );
+
+        const firstPairResult = firstPair.find(
+          (res) => res.runnerType === 'joker-1',
+        )?.finalResultInMs;
+
+        const secondPairResult = secondPair.find(
+          (res) => res.runnerType === 'joker-2',
+        )?.finalResultInMs;
+
+        if (!firstPairResult || !secondPairResult) return;
+
+        if (firstPairResult < secondPairResult) {
+          if (
+            !bestJokerPair[teamResult.team.gender] ||
+            bestJokerPair[teamResult.team.gender].finalResultInMs >
+              firstPairResult
+          ) {
+            bestJokerPair[teamResult.team.gender] = {
+              runners: firstPair,
+              finalResultInMs: firstPairResult,
+            };
+          }
+        } else {
+          if (
+            !bestJokerPair[teamResult.team.gender] ||
+            bestJokerPair[teamResult.team.gender].finalResultInMs >
+              secondPairResult
+          ) {
+            bestJokerPair[teamResult.team.gender] = {
+              runners: secondPair,
+              finalResultInMs: secondPairResult,
+            };
+          }
+        }
+      });
+    });
+
+    return {
+      eventTitle: event.title,
+      podium,
+      bestSportsmen,
+      bestJokerPair,
+    };
+  }
+
   async count() {
     const count = await this.repository.count();
     return { 'Total Events': count };
@@ -240,3 +409,59 @@ export class EventsService {
     return this.repository.delete(id);
   }
 }
+
+type ITeamResults = {
+  male: {
+    [teamId: number]: {
+      team: Team;
+      resultInMs: number;
+    };
+  };
+  female: {
+    [teamId: number]: {
+      team: Team;
+      resultInMs: number;
+    };
+  };
+};
+
+export const addTeamResults = (
+  races: Race[],
+  teamResults: ITeamResults,
+  gender: 'male' | 'female',
+) => {
+  races.forEach((race) => {
+    race.teamResults.forEach((teamResult) => {
+      if (teamResults[gender][teamResult.team.id]) {
+        teamResults[gender][teamResult.team.id].resultInMs +=
+          teamResult.resultInMs;
+      } else {
+        teamResults[gender][teamResult.team.id] = {
+          team: teamResult.team,
+          resultInMs: teamResult.resultInMs,
+        };
+      }
+    });
+  });
+};
+
+export const addToPodium = (
+  podium: any,
+  teamResults: ITeamResults,
+  gender: 'male' | 'female',
+) => {
+  Object.values(teamResults[gender]).forEach((teamResult) => {
+    if (!podium.male[1] || teamResult.resultInMs < podium.male[1].resultInMs) {
+      podium.male[2] = JSON.parse(JSON.stringify(podium.male[1]));
+      podium.male[1] = teamResult;
+    } else if (
+      !podium.male[2] ||
+      teamResult.resultInMs < podium.male[2].resultInMs
+    ) {
+      podium.male[3] = JSON.parse(JSON.stringify(podium.male[2]));
+      podium.male[2] = teamResult;
+    } else {
+      podium.male[3] = teamResult;
+    }
+  });
+};
