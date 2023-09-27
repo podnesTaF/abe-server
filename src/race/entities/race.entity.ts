@@ -22,6 +22,9 @@ export class Race {
   @Column()
   name: string;
 
+  @Column({ default: 'male' })
+  type: string;
+
   @ManyToMany(() => Team, (team) => team.races)
   @JoinTable()
   teams: Team[];

@@ -354,12 +354,39 @@ export class EventsService {
       });
     });
 
+    const racesByType: {
+      [type: string]: {
+        id: number;
+        name: string;
+        startTime: Date;
+      }[];
+    } = {};
+
+    event.races.forEach((race) => {
+      if (racesByType[race.type]) {
+        racesByType[race.type].push({
+          id: race.id,
+          name: race.name,
+          startTime: race.startTime,
+        });
+      } else {
+        racesByType[race.type] = [
+          {
+            id: race.id,
+            name: race.name,
+            startTime: race.startTime,
+          },
+        ];
+      }
+    });
+
     return {
       eventTitle: event.title,
       introImage: event.introImage,
       podium,
       bestSportsmen,
       bestJokerPair,
+      racesByType,
     };
   }
 
