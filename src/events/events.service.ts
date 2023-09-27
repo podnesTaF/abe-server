@@ -453,17 +453,20 @@ export const addToPodium = (
   gender: 'male' | 'female',
 ) => {
   Object.values(teamResults[gender]).forEach((teamResult) => {
-    if (!podium.male[1] || teamResult.resultInMs < podium.male[1].resultInMs) {
-      podium.male[2] = JSON.parse(JSON.stringify(podium.male[1]));
-      podium.male[1] = teamResult;
+    if (
+      !podium[gender][1] ||
+      teamResult.resultInMs < podium[gender][1].resultInMs
+    ) {
+      podium[gender][2] = JSON.parse(JSON.stringify(podium[gender][1]));
+      podium[gender][1] = teamResult;
     } else if (
-      !podium.male[2] ||
+      !podium[gender][2] ||
       teamResult.resultInMs < podium.male[2].resultInMs
     ) {
-      podium.male[3] = JSON.parse(JSON.stringify(podium.male[2]));
-      podium.male[2] = teamResult;
+      podium[gender][3] = JSON.parse(JSON.stringify(podium[gender][2]));
+      podium[gender][2] = teamResult;
     } else {
-      podium.male[3] = teamResult;
+      podium[gender][3] = teamResult;
     }
   });
 };
