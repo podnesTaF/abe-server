@@ -125,6 +125,8 @@ export class RaceService {
         'teamResults.runnerResults',
         'teamResults.runnerResults.runner',
         'teamResults.runnerResults.runner.club',
+        'teamResults.runnerResults.runner.country',
+        'teamResults.runnerResults.runner.personalBests',
         'teamResults.runnerResults.splits',
       ],
     });
