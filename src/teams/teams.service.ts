@@ -260,6 +260,7 @@ export class TeamsService {
     return this.repository.findOne({
       where: { id },
       relations: [
+        'teamImage',
         'events',
         'players',
         'coach',
