@@ -267,7 +267,11 @@ export class UserService {
       }
       const totalPoints = runner.results.reduce((acc, curr) => {
         const split = curr.splits[curr.splits.length - 1];
-        const res = split.resultInMs - curr.splits[0].resultInMs;
+        let res = split.resultInMs;
+
+        if (curr.splits[0].resultInMs > 20000) {
+          res = split.resultInMs - curr.splits[0].resultInMs;
+        }
 
         console.log(runner.surname, split.distance, res);
         return this.calculatePoints(split.distance, res, resultsLen) + acc;
