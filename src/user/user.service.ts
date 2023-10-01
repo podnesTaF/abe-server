@@ -242,17 +242,22 @@ export class UserService {
     } else {
       const toMultiply = 160934 / distance;
       const pointsWithoutExtra = time * toMultiply;
-      const extraPoints = pointsWithoutExtra * 0.1;
+      let toMultiplyExtra = 0.12 * (80000 / distance);
+      if (distance < 70000) {
+        toMultiplyExtra += 0.03;
+      }
+      const extraPoints = pointsWithoutExtra * toMultiplyExtra;
+
       const points = pointsWithoutExtra + extraPoints;
       const pointsToAdd = points / resultsCount;
-      return pointsToAdd;
+      return Math.ceil(pointsToAdd);
     }
   }
 
   async calculateUsersPoints(gender?: string) {
     let runners = await this.repository.find({
       where: { gender: gender || 'male', role: 'runner' },
-      relations: ['results'],
+      relations: ['results', 'results.splits'],
     });
 
     const runnersWithPoints = runners.map((runner) => {
@@ -260,21 +265,20 @@ export class UserService {
       if (resultsLen === 0) {
         return { ...runner, totalPoints: 0 };
       }
-      const totalPoints = runner.results.reduce(
-        (acc, curr) =>
-          this.calculatePoints(
-            curr.distance,
-            curr.finalResultInMs,
-            resultsLen,
-          ) + acc,
-        0,
-      );
+      const totalPoints = runner.results.reduce((acc, curr) => {
+        const split = curr.splits[curr.splits.length - 1];
+        const res = split.resultInMs - curr.splits[0].resultInMs;
+
+        console.log(runner.surname, split.distance, res);
+        return this.calculatePoints(split.distance, res, resultsLen) + acc;
+      }, 0);
       return { ...runner, totalPoints };
     });
 
     runners = runnersWithPoints;
 
-    return this.repository.save(runners);
+    await this.repository.save(runners);
+    return runners.sort((a, b) => a.totalPoints - b.totalPoints);
   }
 
   async updateRanking(gender: string) {

@@ -25,6 +25,7 @@ export class TeamResultsService {
     });
     const team = await this.teamRepository.findOne({
       where: { id: dto.teamId },
+      relations: ['personalBest'],
     });
 
     const teamResult = await this.repository.save({
