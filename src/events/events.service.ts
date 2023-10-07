@@ -7,7 +7,7 @@ import { PrizesService } from 'src/prizes/prizes.service';
 import { Race } from 'src/race/entities/race.entity';
 import { RunnerResult } from 'src/runner-results/entities/runner-results.entity';
 import { Team } from 'src/teams/entities/team.entity';
-import { User } from 'src/user/entities/user.entity';
+import { Runner } from 'src/users/entities/runner.entity';
 import { formatDate } from 'src/utils/date-formater';
 import { Repository } from 'typeorm';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -222,7 +222,7 @@ export class EventsService {
         'races.teamResults.team.logo',
         'races.teamResults.runnerResults',
         'races.teamResults.runnerResults.runner',
-        'races.teamResults.runnerResults.runner.image',
+        'races.teamResults.runnerResults.runner.user.image',
       ],
     });
 
@@ -279,7 +279,7 @@ export class EventsService {
 
     const bestSportsmen: {
       [gender: string]: {
-        runner: User;
+        runner: Runner;
         finalResultInMs: number;
       };
     } = {};

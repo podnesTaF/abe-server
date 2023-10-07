@@ -8,6 +8,7 @@ import { Coach } from 'src/coach/entities/coach.entity';
 import { Content } from 'src/content/entities/content.entity';
 import { Country } from 'src/country/entity/country.entity';
 import { Event } from 'src/events/entities/event.entity';
+import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { Hashtag } from 'src/hashtag/entities/hashtag.entity';
 import { Location } from 'src/locations/entities/locations.entity';
 import { Media } from 'src/media/entities/media.entity';
@@ -21,7 +22,10 @@ import { RunnerResult } from 'src/runner-results/entities/runner-results.entity'
 import { Split } from 'src/splits/entities/splits.entity';
 import { TeamResult } from 'src/team-results/entities/team-results.entity';
 import { Team } from 'src/teams/entities/team.entity';
-import { User } from 'src/user/entities/user.entity';
+import { Manager } from 'src/users/entities/manager.entity';
+import { Runner } from 'src/users/entities/runner.entity';
+import { Spectator } from 'src/users/entities/spectator.entity';
+import { User } from 'src/users/entities/user.entity';
 import { VerifyMember } from 'src/verify-member/entities/verify-member.entity';
 import { ViewerRegistration } from 'src/viewer-registrations/entities/viewer-registration.entity';
 evnconfig();
@@ -58,6 +62,10 @@ const config: TypeOrmModuleOptions = {
     ResetUser,
     Member,
     VerifyMember,
+    Manager,
+    Runner,
+    Spectator,
+    Feedback,
   ],
   synchronize: true,
 };

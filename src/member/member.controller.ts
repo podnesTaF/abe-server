@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { Member } from './entities/member.entity';
 import { MemberService } from './member.service';
@@ -15,11 +14,6 @@ import { MemberService } from './member.service';
 @Controller('members')
 export class MemberController {
   constructor(private readonly memberService: MemberService) {}
-
-  @Post()
-  create(@Body() createMemberDto: CreateMemberDto) {
-    return this.memberService.create(createMemberDto);
-  }
 
   @Post('/verify')
   verifyMember(

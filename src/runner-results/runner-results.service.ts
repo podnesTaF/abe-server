@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SplitsService } from 'src/splits/splits.service';
 import { TeamResult } from 'src/team-results/entities/team-results.entity';
-import { User } from 'src/user/entities/user.entity';
-import { UserService } from 'src/user/user.service';
+import { Runner } from 'src/users/entities/runner.entity';
+import { RunnerService } from 'src/users/services/runner.service';
 import { Repository } from 'typeorm';
 import { CreateRunnerResultDto } from './dto/create-runner-result.dto';
 import { RunnerResult } from './entities/runner-results.entity';
@@ -15,10 +15,10 @@ export class RunnerResultsService {
     private repository: Repository<RunnerResult>,
     @InjectRepository(TeamResult)
     private teamResRepository: Repository<TeamResult>,
-    @InjectRepository(User)
-    private runnerRepository: Repository<User>,
+    @InjectRepository(Runner)
+    private runnerRepository: Repository<Runner>,
     private splitService: SplitsService,
-    private userService: UserService,
+    private runnerService: RunnerService,
   ) {}
 
   async create(dto: CreateRunnerResultDto, teamResultId: number) {
@@ -59,9 +59,9 @@ export class RunnerResultsService {
       await this.runnerRepository.save(runner);
     }
 
-    await this.userService.changeTotalPointsByAddedResult(runnerResult);
+    await this.runnerService.changeTotalPointsByAddedResult(runnerResult);
 
-    await this.userService.updateRanking(runnerResult.runner.gender);
+    await this.runnerService.updateRanking(runnerResult.runner.gender);
 
     const splits = [];
 
@@ -81,7 +81,7 @@ export class RunnerResultsService {
   }
 
   async getUserResults(
-    userId: number,
+    runnerId: number,
     queries: {
       limit?: number;
       page?: number;
@@ -96,7 +96,7 @@ export class RunnerResultsService {
     const totalCount = await this.repository
       .createQueryBuilder('runnerResult')
       .leftJoin('runnerResult.runner', 'runner')
-      .where('runner.id = :userId', { userId })
+      .where('runner.id = :runnerId', { runnerId })
       .getCount();
 
     const pageCount = Math.ceil(totalCount / limit);
@@ -110,7 +110,7 @@ export class RunnerResultsService {
       .leftJoin('race.winner', 'winner')
       .leftJoin('runnerResult.pbForRunner', 'pbForRunner')
       .leftJoin('runnerResult.runner', 'runner')
-      .where('runner.id = :userId', { userId });
+      .where('runner.id = :runnerId', { runnerId });
 
     if (queries.category) {
       qb.andWhere('event.category = :category', { category: queries.category });

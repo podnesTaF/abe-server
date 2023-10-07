@@ -6,7 +6,7 @@ import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
 import { CountryService } from 'src/country/country.service';
 import { Event } from 'src/events/entities/event.entity';
 import { PlayersService } from 'src/players/players.service';
-import { UserService } from 'src/user/user.service';
+import { RunnerService } from 'src/users/services/runner.service';
 import { Repository } from 'typeorm';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Team } from './entities/team.entity';
@@ -20,7 +20,7 @@ export class TeamsService {
     private eventRepository: Repository<Event>,
     private playersService: PlayersService,
     private coachService: CoachService,
-    private userService: UserService,
+    private runnerService: RunnerService,
     private countryService: CountryService,
     private clubService: ClubService,
   ) {}
@@ -29,7 +29,7 @@ export class TeamsService {
     const players = [];
 
     for (let i = 0; i < dto.players.length; i++) {
-      const player = await this.userService.findById(dto.players[i]);
+      const player = await this.runnerService.findById(dto.players[i]);
       players.push(player);
     }
 
@@ -37,7 +37,7 @@ export class TeamsService {
 
     const club = await this.clubService.findPure(dto.clubId);
 
-    const manager = await this.userService.findById(managerId);
+    const manager = await this.runnerService.findById(managerId);
 
     const country = await this.countryService.findById(dto.countryId);
 
@@ -238,7 +238,7 @@ export class TeamsService {
   }
 
   async findAllByUser(userId?: number) {
-    return this.repository
+    const teams = await this.repository
       .createQueryBuilder('team')
       .leftJoinAndSelect('team.players', 'player')
       .leftJoinAndSelect('team.coach', 'coach')
@@ -246,14 +246,16 @@ export class TeamsService {
       .leftJoinAndSelect('team.country', 'country')
       .leftJoinAndSelect('team.club', 'club')
       .leftJoinAndSelect('team.personalBest', 'personalBest')
-      .leftJoinAndSelect('club.members', 'member')
+      .leftJoinAndSelect('club.runners', 'runners')
+      .leftJoinAndSelect('club.manager', 'manager')
       .where('player.id = :runnerId', { runnerId: userId })
-      .orWhere('member.role = :role and member.id = :managerId', {
+      .orWhere('manager.user.id = :managerId', {
         managerId: userId,
-        role: 'manager',
       })
       .leftJoinAndSelect('team.players', 'players')
+      .leftJoinAndSelect('players.user', 'user')
       .getMany();
+    return teams;
   }
 
   findOne(id: number) {
@@ -269,7 +271,7 @@ export class TeamsService {
         'country',
         'players.image',
         'players.country',
-        'club.members',
+        'club.runners',
         'personalBest',
       ],
     });
@@ -292,7 +294,9 @@ export class TeamsService {
 
     const players = [];
     for (let i = 0; i < updateTeamDto.players.length; i++) {
-      const player = await this.userService.findById(updateTeamDto.players[i]);
+      const player = await this.runnerService.findById(
+        updateTeamDto.players[i],
+      );
       players.push(player);
     }
 
@@ -321,7 +325,7 @@ export class TeamsService {
   async countAll() {
     const res = [];
     const playersCount = await this.playersService.count();
-    const usersCount = await this.userService.count();
+    const usersCount = await this.runnerService.count();
     const teamsCount = await this.count();
     const eventsCount = await this.eventRepository.count();
     res.push(playersCount, usersCount, teamsCount, {
