@@ -22,7 +22,7 @@ export class FileController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'runner', 'spectator', 'manager')
   @UseInterceptors(FileInterceptor('image'))
   async uploadImage(@UploadedFile() file: any): Promise<Media> {
     if (!file) {
