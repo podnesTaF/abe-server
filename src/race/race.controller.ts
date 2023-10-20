@@ -40,7 +40,9 @@ export class RaceController {
   }
 
   @Get('/last-matches')
-  getLastMatches(@Query() query: { runnerId?: string; teamId?: string }) {
+  getLastMatches(
+    @Query() query: { runnerId?: string; teamId?: string; managerId?: string },
+  ) {
     return this.raceService.getLastMatches(query);
   }
 

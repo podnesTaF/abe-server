@@ -113,7 +113,11 @@ export class RaceService {
     });
   }
 
-  getLastMatches(query: { runnerId?: string; teamId?: string }) {
+  getLastMatches(query: {
+    runnerId?: string;
+    teamId?: string;
+    managerId?: string;
+  }) {
     const qb = this.repository
       .createQueryBuilder('race')
       .leftJoinAndSelect('race.event', 'event')
@@ -129,6 +133,15 @@ export class RaceService {
         .where('runner.id = :runnerId', {
           runnerId: +query.runnerId,
         });
+    }
+
+    if (query.managerId) {
+      qb.leftJoinAndSelect('team.manager', 'manager').where(
+        'manager.id = :managerId',
+        {
+          managerId: +query.managerId,
+        },
+      );
     }
 
     if (query.teamId) {
