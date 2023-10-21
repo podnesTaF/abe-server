@@ -1,12 +1,4 @@
-export const getVerificationLetterTemplate = ({
-  token,
-  ticket,
-}: {
-  token: string;
-  ticket: boolean;
-}) => {
-  return `
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <style>
@@ -103,5 +95,3 @@ export const getVerificationLetterTemplate = ({
     </div>
   </body>
 </html>
-    `;
-};

@@ -74,8 +74,11 @@ export class UserService {
 
     const msg = {
       to: newUser.email,
-      from: 'it.podnes@gmail.com',
-      subject: 'Verify email address | Ace Battle Mile',
+      from: {
+        email: 'it.podnes@gmail.com',
+        name: 'Ace Battle Mile',
+      },
+      subject: 'Confirm your email address | Ace Battle Mile',
       html: getVerificationLetterTemplate({
         token: verification.token,
         ticket: false,
