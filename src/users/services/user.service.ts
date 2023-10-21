@@ -80,6 +80,7 @@ export class UserService {
       },
       subject: 'Confirm your email address | Ace Battle Mile',
       html: getVerificationLetterTemplate({
+        name: newUser.name,
         token: verification.token,
         ticket: false,
       }),
