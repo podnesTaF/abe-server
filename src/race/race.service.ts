@@ -150,7 +150,7 @@ export class RaceService {
       });
     }
 
-    qb.where('race.startTime < :now', {
+    qb.andWhere('race.startTime < :now', {
       now: new Date(), // Current time
     })
       .orderBy('race.startTime', 'DESC') // Order by startTime in descending order

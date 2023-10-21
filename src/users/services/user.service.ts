@@ -8,6 +8,7 @@ import { getVerificationLetterTemplate } from 'src/member/utils/getLetterTemplat
 import { VerifyMemberService } from 'src/verify-member/verify-member.service';
 import { Repository } from 'typeorm';
 import * as uuid from 'uuid';
+import { CompleteVerificationDto } from '../dtos/complete-verification.dto';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { LoginUserDto } from '../dtos/login-user.dto';
 import { UpdateUserDto } from '../dtos/update-user.dto';
@@ -94,11 +95,7 @@ export class UserService {
     user,
     token,
     password,
-  }: {
-    user: User;
-    token: string;
-    password: string;
-  }) {
+  }: CompleteVerificationDto) {
     try {
       const fullUser = await this.repository.findOne({
         where: { id: user.id },
