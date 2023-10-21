@@ -1,7 +1,9 @@
 export const getVerificationLetterTemplate = ({
+  name,
   token,
   ticket,
 }: {
+  name: string;
   token: string;
   ticket: boolean;
 }) => {
@@ -70,7 +72,7 @@ export const getVerificationLetterTemplate = ({
         />
       </div>
       <div class="main-container">
-        <div class="title-text">Hi, Oleksii</div>
+        <div class="title-text">Hi, ${name}</div>
         <div class="title-text mb-4">
           You are about to become a Ace Battle Mile member!
         </div>
