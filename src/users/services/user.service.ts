@@ -5,7 +5,6 @@ import * as bcrypt from 'bcrypt';
 import { CountryService } from 'src/country/country.service';
 import { Country } from 'src/country/entity/country.entity';
 import { getVerificationLetterTemplate } from 'src/member/utils/getLetterTemplate';
-import { generateRandomPassword } from 'src/utils/random-password';
 import { VerifyMemberService } from 'src/verify-member/verify-member.service';
 import { Repository } from 'typeorm';
 import * as uuid from 'uuid';
@@ -41,6 +40,7 @@ export class UserService {
     user.name = dto.name;
     user.surname = dto.surname;
     user.email = dto.email;
+    user.image = dto.image;
     user.city = dto.city;
     let country = await this.countryService.returnIfExist({
       name: dto.country,
@@ -97,7 +97,7 @@ export class UserService {
   }: {
     user: User;
     token: string;
-    password?: string;
+    password: string;
   }) {
     try {
       const fullUser = await this.repository.findOne({
@@ -106,11 +106,7 @@ export class UserService {
 
       fullUser.verified = true;
 
-      let randomPassword: string;
-      if (!password) {
-        randomPassword = generateRandomPassword();
-      }
-      const hashedPassword = await bcrypt.hash(password || 'podnes', 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       fullUser.password = hashedPassword;
 
