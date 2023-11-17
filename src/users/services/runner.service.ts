@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Best } from 'src/bests/entities/best.entity';
-import { RunnerResult } from 'src/runner-results/entities/runner-results.entity';
-import { createDateFromDDMMYYYY } from 'src/utils/date-formater';
-import { Repository } from 'typeorm';
-import { CreateRunnerDto } from '../dtos/create-runner.dto';
-import { Runner } from '../entities/runner.entity';
-import { User } from '../entities/user.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Best } from "src/bests/entities/best.entity";
+import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
+import { createDateFromDDMMYYYY } from "src/utils/date-formater";
+import { Repository } from "typeorm";
+import { CreateRunnerDto } from "../dtos/create-runner.dto";
+import { Runner } from "../entities/runner.entity";
+import { User } from "../entities/user.entity";
 
 @Injectable()
 export class RunnerService {
@@ -51,33 +51,33 @@ export class RunnerService {
     const limit = +query.limit || 5;
 
     const qb = this.repository
-      .createQueryBuilder('runner')
-      .leftJoinAndSelect('runner.user', 'user')
-      .leftJoinAndSelect('user.image', 'image')
-      .leftJoinAndSelect('runner.teamsAsRunner', 'teams')
-      .leftJoinAndSelect('user.country', 'country')
-      .addOrderBy('runner.rank', 'ASC');
+      .createQueryBuilder("runner")
+      .leftJoinAndSelect("runner.user", "user")
+      .leftJoinAndSelect("user.image", "image")
+      .leftJoinAndSelect("runner.teamsAsRunner", "teams")
+      .leftJoinAndSelect("user.country", "country")
+      .addOrderBy("runner.rank", "ASC");
 
     if (query.country) {
-      qb.andWhere('country.name LIKE :country', {
+      qb.andWhere("country.name LIKE :country", {
         country: `%${query.country}%`,
       });
     }
 
     if (query.team) {
-      qb.andWhere('teams.name LIKE :team', {
+      qb.andWhere("teams.name LIKE :team", {
         team: `%${query.team}%`,
       });
     }
 
     if (query.gender) {
-      qb.andWhere('runner.gender = :gender', {
+      qb.andWhere("runner.gender = :gender", {
         gender: query.gender,
       });
     }
 
     if (query.name) {
-      qb.andWhere('user.name LIKE :name', {
+      qb.andWhere("user.name LIKE :name", {
         name: `%${query.name}%`,
       });
     }
@@ -95,6 +95,43 @@ export class RunnerService {
       totalPages,
     };
   }
+
+  async getTopRunners({
+    count,
+    gender,
+  }: {
+    count: number;
+    gender?: string;
+  }): Promise<{
+    male: Runner[] | null;
+    female: Runner[] | null;
+  }> {
+    const returnData = {
+      male: null,
+      female: null,
+    };
+    if (!gender) {
+      returnData["male"] = await this.getTopRunnersByGender(count, "male");
+      returnData["female"] = await this.getTopRunnersByGender(count, "female");
+    } else {
+      returnData[gender] = await this.getTopRunnersByGender(count, gender);
+    }
+
+    return returnData;
+  }
+
+  async getTopRunnersByGender(count: number, gender: string) {
+    const qb = this.repository
+      .createQueryBuilder("runner")
+      .leftJoinAndSelect("runner.user", "user")
+      .leftJoinAndSelect("user.image", "image")
+      .where("runner.gender = :gender", { gender })
+      .orderBy("runner.rank", "ASC")
+      .take(count);
+
+    return qb.getMany();
+  }
+
   findById(id: number) {
     return this.repository.findOne({ where: { id } });
   }
@@ -104,10 +141,10 @@ export class RunnerService {
       return null;
     }
     const rating = await this.repository
-      .createQueryBuilder('runner')
-      .andWhere('runner.totalPoints > 0')
-      .andWhere('runner.totalPoints < :userPoints', { userPoints })
-      .andWhere('runner.gender = :gender', { gender })
+      .createQueryBuilder("runner")
+      .andWhere("runner.totalPoints > 0")
+      .andWhere("runner.totalPoints < :userPoints", { userPoints })
+      .andWhere("runner.gender = :gender", { gender })
       .getCount();
 
     return rating + 1;
@@ -116,7 +153,7 @@ export class RunnerService {
   async changeTotalPointsByAddedResult(result: RunnerResult) {
     const runner = await this.repository.findOne({
       where: { id: result.runner.id },
-      relations: ['results'],
+      relations: ["results"],
     });
 
     const resultsLen = runner.results.length;
@@ -152,8 +189,8 @@ export class RunnerService {
 
   async calculateUsersPoints(gender?: string) {
     let runners = await this.repository.find({
-      where: { gender: gender || 'male' },
-      relations: ['results', 'results.splits'],
+      where: { gender: gender || "male" },
+      relations: ["results", "results.splits"],
     });
 
     const runnersWithPoints = runners.map((runner) => {
@@ -183,7 +220,7 @@ export class RunnerService {
 
   async updateRanking(gender: string) {
     let runners = await this.repository.find({
-      where: { gender: gender || 'male' },
+      where: { gender: gender || "male" },
     });
 
     runners = runners.filter((r) => r.totalPoints > 0);
@@ -199,7 +236,7 @@ export class RunnerService {
 
   async updatePersonalBestsForAllRunners() {
     let runners = await this.repository.find({
-      relations: ['results', 'personalBests'],
+      relations: ["results", "personalBests"],
     });
 
     runners = runners.map((runner) => {
@@ -221,6 +258,6 @@ export class RunnerService {
 
   async count() {
     const count = await this.repository.count();
-    return { 'Total players': count };
+    return { "Total players": count };
   }
 }

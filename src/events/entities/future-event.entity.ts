@@ -1,19 +1,19 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class Media {
+export class FutureEvent {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   title: string;
 
+  @Column({ nullable: true })
+  description?: string;
+
   @Column()
-  mediaUrl: string;
+  season: string;
 
   @Column({ nullable: true })
-  smallUrl: string;
-
-  @Column()
-  mediaType: string;
+  date?: Date;
 }
