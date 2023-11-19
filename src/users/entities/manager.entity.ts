@@ -1,5 +1,5 @@
-import { Club } from 'src/club/entities/club.entity';
-import { Team } from 'src/teams/entities/team.entity';
+import { Club } from "src/club/entities/club.entity";
+import { Team } from "src/teams/entities/team.entity";
 import {
   Column,
   Entity,
@@ -7,8 +7,8 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-} from 'typeorm';
-import { User } from './user.entity';
+} from "typeorm";
+import { User } from "./user.entity";
 
 @Entity()
 export class Manager {
@@ -18,12 +18,12 @@ export class Manager {
   @Column()
   phone: string;
 
-  @OneToMany(() => Team, (team) => team.manager, { onDelete: 'CASCADE' })
+  @OneToMany(() => Team, (team) => team.manager, { onDelete: "CASCADE" })
   teams: Team[];
 
   @OneToOne(() => Club, (club) => club.manager, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   club: Club;

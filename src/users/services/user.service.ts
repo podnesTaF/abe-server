@@ -1,20 +1,20 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import sgMail from '@sendgrid/mail';
-import * as bcrypt from 'bcrypt';
-import { CountryService } from 'src/country/country.service';
-import { Country } from 'src/country/entity/country.entity';
-import { getVerificationLetterTemplate } from 'src/member/utils/getLetterTemplate';
-import { VerifyMemberService } from 'src/verify-member/verify-member.service';
-import { Repository } from 'typeorm';
-import * as uuid from 'uuid';
-import { CompleteVerificationDto } from '../dtos/complete-verification.dto';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { LoginUserDto } from '../dtos/login-user.dto';
-import { UpdateUserDto } from '../dtos/update-user.dto';
-import { User } from '../entities/user.entity';
-import { RunnerService } from './runner.service';
-import { SpectatorService } from './spectator.service';
+import { ForbiddenException, Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import sgMail from "@sendgrid/mail";
+import * as bcrypt from "bcrypt";
+import { CountryService } from "src/country/country.service";
+import { Country } from "src/country/entity/country.entity";
+import { getVerificationLetterTemplate } from "src/member/utils/getLetterTemplate";
+import { VerifyMemberService } from "src/verify-member/verify-member.service";
+import { Repository } from "typeorm";
+import * as uuid from "uuid";
+import { CompleteVerificationDto } from "../dtos/complete-verification.dto";
+import { CreateUserDto } from "../dtos/create-user.dto";
+import { LoginUserDto } from "../dtos/login-user.dto";
+import { UpdateUserDto } from "../dtos/update-user.dto";
+import { User } from "../entities/user.entity";
+import { RunnerService } from "./runner.service";
+import { SpectatorService } from "./spectator.service";
 
 @Injectable()
 export class UserService {
@@ -33,7 +33,7 @@ export class UserService {
     });
 
     if (isDuplicate) {
-      throw new ForbiddenException('User with this email already exists');
+      throw new ForbiddenException("User with this email already exists");
     }
     const user = new User();
 
@@ -75,10 +75,10 @@ export class UserService {
     const msg = {
       to: newUser.email,
       from: {
-        email: 'it.podnes@gmail.com',
-        name: 'Ace Battle Mile',
+        email: "it.podnes@gmail.com",
+        name: "Ace Battle Mile",
       },
-      subject: 'Confirm your email address | Ace Battle Mile',
+      subject: "Confirm your email address | Ace Battle Mile",
       html: getVerificationLetterTemplate({
         name: newUser.name,
         token: verification.token,
@@ -89,7 +89,7 @@ export class UserService {
     try {
       await sgMail.send(msg);
     } catch (error) {
-      console.log('error sending email', error.message);
+      console.log("error sending email", error.message);
     }
 
     return this.repository.save(newUser);
@@ -122,7 +122,7 @@ export class UserService {
 
   findAll() {
     return this.repository.find({
-      select: ['id', 'name', 'surname', 'email', 'city', 'country'],
+      select: ["id", "name", "surname", "email", "city", "country"],
     });
   }
 
@@ -134,35 +134,42 @@ export class UserService {
     const user = await this.repository.findOne({
       where: { id },
       relations: [
-        'image',
-        'country',
-        'runner',
-        'runner.personalBests',
-        'runner.results',
-        'runner.club',
-        'manager',
-        'manager.club',
-        'spectator',
-        'spectator.favoriteClubs',
+        "image",
+        "country",
+        "runner",
+        "runner.personalBests",
+        "runner.results",
+        "runner.club",
+        "runner.teamsAsRunner",
+        "runner.teamsAsRunner.logo",
+        "runner.teamsAsRunner.teamImage",
+        "runner.teamsAsRunner.country",
+        "runner.teamsAsRunner.coach",
+        "runner.teamsAsRunner.personalBest",
+        "manager",
+        "manager.club",
+        "spectator",
+        "spectator.favoriteClubs",
       ],
     });
+
     return user;
   }
 
   async findByCond(cond: LoginUserDto) {
     const query = this.repository
-      .createQueryBuilder('user')
+      .createQueryBuilder("user")
       .where({ ...cond })
-      .leftJoinAndSelect('user.image', 'image');
+      .leftJoinAndSelect("user.image", "image");
 
     const userPreview = await query.getOne();
 
-    if (userPreview.role === 'runner') {
-      query.leftJoinAndSelect('user.runner', 'runner');
-      query.leftJoinAndSelect('runner.club', 'club');
-    } else if (userPreview.role === 'manager') {
-      query.leftJoinAndSelect('user.manager', 'manager');
-      query.leftJoinAndSelect('manager.club', 'club');
+    if (userPreview.role === "runner") {
+      query.leftJoinAndSelect("user.runner", "runner");
+      query.leftJoinAndSelect("runner.club", "club");
+    } else if (userPreview.role === "manager") {
+      query.leftJoinAndSelect("user.manager", "manager");
+      query.leftJoinAndSelect("manager.club", "club");
     }
 
     const user = await query.getOne();
@@ -180,7 +187,7 @@ export class UserService {
 
   async count() {
     const count = await this.repository.count();
-    return { 'Total users': count };
+    return { "Total users": count };
   }
 
   update(id: number, dto: User) {
@@ -216,7 +223,7 @@ export class UserService {
     dto: { oldPassword: string; newPassword: string; confirmPassword: string },
   ) {
     if (dto.newPassword !== dto.confirmPassword || dto.newPassword.length < 6) {
-      throw new ForbiddenException('Error Changing password');
+      throw new ForbiddenException("Error Changing password");
     }
     const user = await this.repository.findOne({ where: { id } });
     if (user) {

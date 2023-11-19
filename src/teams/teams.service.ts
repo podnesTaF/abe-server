@@ -1,15 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ClubService } from 'src/club/club.service';
-import { CoachService } from 'src/coach/coach.service';
-import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
-import { CountryService } from 'src/country/country.service';
-import { Event } from 'src/events/entities/event.entity';
-import { PlayersService } from 'src/players/players.service';
-import { RunnerService } from 'src/users/services/runner.service';
-import { Repository } from 'typeorm';
-import { CreateTeamDto } from './dto/create-team.dto';
-import { Team } from './entities/team.entity';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ClubService } from "src/club/club.service";
+import { CoachService } from "src/coach/coach.service";
+import { CreateCoachDto } from "src/coach/dto/create-coach-dto";
+import { CountryService } from "src/country/country.service";
+import { Event } from "src/events/entities/event.entity";
+import { PlayersService } from "src/players/players.service";
+import { RunnerService } from "src/users/services/runner.service";
+import { Repository } from "typeorm";
+import { CreateTeamDto } from "./dto/create-team.dto";
+import { Team } from "./entities/team.entity";
 
 @Injectable()
 export class TeamsService {
@@ -61,16 +61,16 @@ export class TeamsService {
   ) {
     const team = await this.repository.findOne({
       where: { id: dto.teamId },
-      relations: ['events'],
+      relations: ["events"],
     });
 
     const event = await this.eventRepository.findOne({
       where: { id: dto.eventId },
-      relations: ['teams'],
+      relations: ["teams"],
     });
 
     if (!team || !event) {
-      throw new NotFoundException('Team or event not found');
+      throw new NotFoundException("Team or event not found");
     }
 
     team.events.push(event);
@@ -85,30 +85,30 @@ export class TeamsService {
     const limit = +queries.limit || 20;
 
     const qb = this.repository
-      .createQueryBuilder('team')
-      .leftJoinAndSelect('team.country', 'country')
-      .leftJoinAndSelect('team.coach', 'coach')
-      .leftJoinAndSelect('team.players', 'players')
-      .leftJoinAndSelect('team.logo', 'logo')
-      .leftJoinAndSelect('team.events', 'events')
-      .leftJoinAndSelect('team.personalBest', 'personalBest');
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.country", "country")
+      .leftJoinAndSelect("team.coach", "coach")
+      .leftJoinAndSelect("team.players", "players")
+      .leftJoinAndSelect("team.logo", "logo")
+      .leftJoinAndSelect("team.events", "events")
+      .leftJoinAndSelect("team.personalBest", "personalBest");
 
     if (queries.user) {
-      qb.where('team.managerId = :id', { id: userId });
+      qb.where("team.managerId = :id", { id: userId });
 
       return qb.getMany();
     }
 
     if (queries.country) {
-      qb.where('country.name = :name', { name: queries.country });
+      qb.where("country.name = :name", { name: queries.country });
     }
 
     if (queries.gender) {
-      qb.andWhere('team.gender = :gender', { gender: queries.gender });
+      qb.andWhere("team.gender = :gender", { gender: queries.gender });
     }
 
     if (queries.name) {
-      qb.andWhere('team.gender = :name', { name: queries.name });
+      qb.andWhere("team.gender = :name", { name: queries.name });
     }
 
     const totalItems = await qb.getCount();
@@ -125,10 +125,57 @@ export class TeamsService {
     };
   }
 
+  async findTopTeams({
+    count,
+    gender,
+  }: {
+    count?: string;
+    gender?: "male" | "female";
+  }) {
+    const returnData = {
+      male: null,
+      female: null,
+    };
+
+    if (!gender) {
+      returnData.male = await this.getTopTeamsByGender(+count || 1, "male");
+      returnData.female = await this.getTopTeamsByGender(+count || 1, "female");
+    } else {
+      returnData[gender] = await this.getTopTeamsByGender(+count || 1, gender);
+    }
+
+    return returnData;
+  }
+
+  async getTopTeamsByGender(count: number, gender: "male" | "female") {
+    return this.repository
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.logo", "logo")
+      .leftJoinAndSelect("team.teamImage", "teamImage")
+      .where("team.gender = :gender", { gender })
+      .orderBy("team.rank", "ASC")
+      .take(count)
+      .getMany();
+  }
+
+  async findAllManagerTeams(userId: number) {
+    const teams = await this.repository
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.logo", "logo")
+      .leftJoinAndSelect("team.teamImage", "teamImage")
+      .leftJoinAndSelect("team.manager", "manager")
+      .leftJoinAndSelect("team.coach", "coach")
+      .leftJoinAndSelect("manager.user", "user")
+      .where("user.id = :userId", { userId })
+      .getMany();
+
+    return teams;
+  }
+
   findAllPreviews() {
     return this.repository.find({
-      relations: ['logo'],
-      select: ['id', 'name', 'logo'],
+      relations: ["logo"],
+      select: ["id", "name", "logo"],
     });
   }
 
@@ -142,14 +189,14 @@ export class TeamsService {
     const teams = await this.repository.find({
       where: { manager: { id: +userId } },
       relations: [
-        'events',
-        'events.teams',
-        'events.location',
-        'events.location.country',
-        'events.prizes',
-        'coach',
+        "events",
+        "events.teams",
+        "events.location",
+        "events.location.country",
+        "events.prizes",
+        "coach",
       ],
-      order: { id: 'ASC' },
+      order: { id: "ASC" },
     });
     const removeUnnecessary = (event: Event) => {
       const totalPrize = event.prizes.reduce(
@@ -197,16 +244,30 @@ export class TeamsService {
     };
   }
 
-  async getRegistrationsByPlayerId(playerId: number) {
-    const teams = await this.repository
-      .createQueryBuilder('team')
-      .leftJoinAndSelect('team.events', 'events')
-      .leftJoinAndSelect('events.location', 'location')
-      .leftJoinAndSelect('team.coach', 'coach')
-      .leftJoinAndSelect('team.players', 'players')
-      .where('players.id = :id', { id: playerId })
-      .andWhere('events.endDate > :now', { now: new Date() })
-      .getMany();
+  async getRegistrationsByPlayerId(
+    playerId: number,
+    { past, year }: { past?: boolean; year?: string },
+  ) {
+    const qb = this.repository
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.events", "events")
+      .leftJoinAndSelect("events.location", "location")
+      .leftJoinAndSelect("location.country", "country")
+      .leftJoinAndSelect("team.coach", "coach")
+      .leftJoinAndSelect("team.players", "players")
+      .where("players.id = :id", { id: playerId });
+
+    if (past) {
+      qb.andWhere("events.endDate < :now", { now: new Date() });
+    } else {
+      qb.andWhere("events.endDate > :now", { now: new Date() });
+    }
+
+    if (year) {
+      qb.andWhere("EXTRACT(YEAR FROM events.startDateTime) = :year", { year });
+    }
+
+    const teams = await qb.getMany();
 
     const transformedData = teams.flatMap((team) => {
       const eventList = team.events;
@@ -241,21 +302,21 @@ export class TeamsService {
 
   async findAllByUser(userId?: number) {
     const teams = await this.repository
-      .createQueryBuilder('team')
-      .leftJoinAndSelect('team.players', 'player')
-      .leftJoinAndSelect('team.coach', 'coach')
-      .leftJoinAndSelect('team.logo', 'logo')
-      .leftJoinAndSelect('team.country', 'country')
-      .leftJoinAndSelect('team.club', 'club')
-      .leftJoinAndSelect('team.personalBest', 'personalBest')
-      .leftJoinAndSelect('club.runners', 'runners')
-      .leftJoinAndSelect('club.manager', 'manager')
-      .where('player.id = :runnerId', { runnerId: userId })
-      .orWhere('manager.user.id = :managerId', {
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.players", "player")
+      .leftJoinAndSelect("team.coach", "coach")
+      .leftJoinAndSelect("team.logo", "logo")
+      .leftJoinAndSelect("team.country", "country")
+      .leftJoinAndSelect("team.club", "club")
+      .leftJoinAndSelect("team.personalBest", "personalBest")
+      .leftJoinAndSelect("club.runners", "runners")
+      .leftJoinAndSelect("club.manager", "manager")
+      .where("player.id = :runnerId", { runnerId: userId })
+      .orWhere("manager.user.id = :managerId", {
         managerId: userId,
       })
-      .leftJoinAndSelect('team.players', 'players')
-      .leftJoinAndSelect('players.user', 'user')
+      .leftJoinAndSelect("team.players", "players")
+      .leftJoinAndSelect("players.user", "user")
       .getMany();
     return teams;
   }
@@ -264,18 +325,18 @@ export class TeamsService {
     return this.repository.findOne({
       where: { id },
       relations: [
-        'teamImage',
-        'events',
-        'players',
-        'coach',
-        'club',
-        'logo',
-        'country',
-        'players.user',
-        'players.user.image',
-        'players.user.country',
-        'club.runners',
-        'personalBest',
+        "teamImage",
+        "events",
+        "players",
+        "coach",
+        "club",
+        "logo",
+        "country",
+        "players.user",
+        "players.user.image",
+        "players.user.country",
+        "club.runners",
+        "personalBest",
       ],
     });
   }
@@ -292,7 +353,7 @@ export class TeamsService {
   ) {
     const team = await this.repository.findOne({
       where: { id },
-      relations: ['players', 'coach'],
+      relations: ["players", "coach"],
     });
 
     const players = [];
@@ -322,7 +383,7 @@ export class TeamsService {
 
   async count() {
     const count = await this.repository.count();
-    return { 'Teams count': count };
+    return { "Teams count": count };
   }
 
   async countAll() {
@@ -332,7 +393,7 @@ export class TeamsService {
     const teamsCount = await this.count();
     const eventsCount = await this.eventRepository.count();
     res.push(playersCount, usersCount, teamsCount, {
-      'total events': eventsCount,
+      "total events": eventsCount,
     });
 
     return res;
@@ -340,16 +401,16 @@ export class TeamsService {
 
   findAllSnippetByEventId(eventId: number) {
     return this.repository
-      .createQueryBuilder('team')
-      .leftJoinAndSelect('team.events', 'event')
-      .where('event.id = :eventId', { eventId })
-      .select(['team.id', 'team.name'])
+      .createQueryBuilder("team")
+      .leftJoinAndSelect("team.events", "event")
+      .where("event.id = :eventId", { eventId })
+      .select(["team.id", "team.name"])
       .getMany();
   }
 
   async updatePersonalBestsForAllTeams() {
     let teams = await this.repository.find({
-      relations: ['personalBest', 'results'],
+      relations: ["personalBest", "results"],
     });
 
     teams = teams.map((team) => {
@@ -368,7 +429,7 @@ export class TeamsService {
   async calculateTeamsPoints(gender: string) {
     let teams = await this.repository.find({
       where: { gender },
-      relations: ['results'],
+      relations: ["results"],
     });
 
     const teamsWithPoints = teams.map((team) => {

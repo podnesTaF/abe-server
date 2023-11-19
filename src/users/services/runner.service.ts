@@ -96,6 +96,73 @@ export class RunnerService {
     };
   }
 
+  async getRunnersByManager(id: number) {
+    const qb = this.repository
+      .createQueryBuilder("runner")
+      .leftJoinAndSelect("runner.user", "user")
+      .leftJoinAndSelect("user.image", "image")
+      .leftJoinAndSelect("runner.teamsAsRunner", "teamsAsRunner")
+      .where("teamsAsRunner.managerId = :id", { id });
+
+    const runners = await qb.getMany();
+
+    return runners;
+  }
+
+  async getRunnerPreviews({
+    type,
+    query,
+    limit,
+    page,
+  }: {
+    type?: "search" | "all";
+    query: string;
+    limit?: string;
+    page?: string;
+  }) {
+    const limitToUse = Math.max(1, !isNaN(+limit) ? +limit : 10);
+    const pageToUse = Math.max(1, !isNaN(+page) ? +page : 1);
+
+    console.log(limitToUse, pageToUse);
+
+    const qb = this.repository
+      .createQueryBuilder("runner")
+      .leftJoinAndSelect("runner.user", "user")
+      .leftJoinAndSelect("user.image", "image")
+      .leftJoinAndSelect("runner.teamsAsRunner", "teamsAsRunner");
+
+    if (type === "search" && !query) {
+      return {
+        runners: null,
+        totalPages: 0,
+      };
+    }
+
+    qb.where("user.name LIKE :query", { query: `%${query}%` }).orWhere(
+      "user.surname LIKE :query",
+      { query: `%${query}%` },
+    );
+
+    const totalItems = await qb.getCount();
+
+    const totalPages = Math.ceil(totalItems / limitToUse);
+
+    const runners = await qb.getMany();
+
+    const runnerPreviews = runners.map((runner) => ({
+      id: runner.id,
+      gender: runner.gender,
+      dateOfBirth: runner.dateOfBirth,
+      user: runner.user,
+      teamsAsRunner: runner.teamsAsRunner || [],
+    }));
+
+    return {
+      runners: runnerPreviews,
+      totalPages,
+    };
+  }
+
   async getTopRunners({
     count,
     gender,
@@ -125,6 +192,7 @@ export class RunnerService {
       .createQueryBuilder("runner")
       .leftJoinAndSelect("runner.user", "user")
       .leftJoinAndSelect("user.image", "image")
+      .leftJoinAndSelect("runner.teamsAsRunner", "teamsAsRunner")
       .where("runner.gender = :gender", { gender })
       .orderBy("runner.rank", "ASC")
       .take(count);

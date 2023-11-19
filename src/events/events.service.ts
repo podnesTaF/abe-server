@@ -1,22 +1,22 @@
-import { Storage } from '@google-cloud/storage';
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CountryService } from 'src/country/country.service';
-import { LocationsService } from 'src/locations/locations.service';
-import { PrizesService } from 'src/prizes/prizes.service';
-import { Race } from 'src/race/entities/race.entity';
-import { RunnerResult } from 'src/runner-results/entities/runner-results.entity';
-import { Team } from 'src/teams/entities/team.entity';
-import { Runner } from 'src/users/entities/runner.entity';
-import { formatDate } from 'src/utils/date-formater';
-import { Repository } from 'typeorm';
-import { CreateEventDto } from './dto/create-event.dto';
+import { Storage } from "@google-cloud/storage";
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { CountryService } from "src/country/country.service";
+import { LocationsService } from "src/locations/locations.service";
+import { PrizesService } from "src/prizes/prizes.service";
+import { Race } from "src/race/entities/race.entity";
+import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
+import { Team } from "src/teams/entities/team.entity";
+import { Runner } from "src/users/entities/runner.entity";
+import { formatDate } from "src/utils/date-formater";
+import { Repository } from "typeorm";
+import { CreateEventDto } from "./dto/create-event.dto";
 import {
   UpdateEventInfo,
   UpdateEventMedia,
   UpdateEventPrizes,
-} from './dto/update-event.dto';
-import { Event } from './entities/event.entity';
+} from "./dto/update-event.dto";
+import { Event } from "./entities/event.entity";
 
 @Injectable()
 export class EventsService {
@@ -75,20 +75,20 @@ export class EventsService {
     const limit = +query.limit || 5;
 
     const qb = this.repository
-      .createQueryBuilder('event')
-      .leftJoinAndSelect('event.introImage', 'introImage')
-      .leftJoinAndSelect('event.minorImage', 'minorImage')
-      .leftJoinAndSelect('event.location', 'location')
-      .leftJoinAndSelect('location.country', 'country')
-      .leftJoin('event.teams', 'team')
-      .loadRelationCountAndMap('event.teamsCount', 'event.teams')
-      .leftJoinAndSelect('event.prizes', 'prize')
-      .orderBy('event.id', 'DESC');
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.introImage", "introImage")
+      .leftJoinAndSelect("event.minorImage", "minorImage")
+      .leftJoinAndSelect("event.location", "location")
+      .leftJoinAndSelect("location.country", "country")
+      .leftJoin("event.teams", "team")
+      .loadRelationCountAndMap("event.teamsCount", "event.teams")
+      .leftJoinAndSelect("event.prizes", "prize")
+      .orderBy("event.id", "DESC");
 
     if (query.month) {
       const month = query.month.toLowerCase();
       const monthIndex = new Date(`${month} 1, 2000`).getMonth() + 1; // Get the month index (1-12)
-      qb.where('EXTRACT(MONTH FROM event.startDateTime) = :monthIndex', {
+      qb.where("EXTRACT(MONTH FROM event.startDateTime) = :monthIndex", {
         monthIndex,
       });
     }
@@ -96,24 +96,24 @@ export class EventsService {
     if (query.year) {
       const year = +query.year;
       if (!isNaN(year)) {
-        qb.andWhere('YEAR(event.startDateTime) = :year', { year });
+        qb.andWhere("YEAR(event.startDateTime) = :year", { year });
       }
     }
 
     if (query.name) {
-      qb.andWhere('event.title LIKE :name', { name: `%${query.name}%` });
+      qb.andWhere("event.title LIKE :name", { name: `%${query.name}%` });
     }
 
     if (query.country) {
-      qb.andWhere('country.name LIKE :country', {
+      qb.andWhere("country.name LIKE :country", {
         country: `%${query.country}%`,
       });
     }
 
     if (query.finished) {
-      qb.andWhere('event.endDate < :now', { now: new Date() });
+      qb.andWhere("event.endDate < :now", { now: new Date() });
     } else {
-      qb.andWhere('event.endDate > :now', { now: new Date() });
+      qb.andWhere("event.endDate > :now", { now: new Date() });
     }
 
     const totalItems = await qb.getCount();
@@ -140,8 +140,8 @@ export class EventsService {
 
   async getAllInShort() {
     const events = await this.repository.find({
-      relations: ['introImage'],
-      select: ['id', 'title', 'startDateTime', 'introImage'],
+      relations: ["introImage"],
+      select: ["id", "title", "startDateTime", "introImage"],
     });
     return events.map((event) => ({
       ...event,
@@ -151,7 +151,7 @@ export class EventsService {
 
   getAllSnippet() {
     return this.repository.find({
-      select: ['id', 'title'],
+      select: ["id", "title"],
     });
   }
 
@@ -159,17 +159,17 @@ export class EventsService {
     const event = await this.repository.findOne({
       where: { id },
       relations: [
-        'location',
-        'location.country',
-        'teams',
-        'teams.country',
-        'teams.club',
-        'teams.logo',
-        'teams.coach',
-        'prizes',
-        'teams.players',
-        'introImage',
-        'minorImage',
+        "location",
+        "location.country",
+        "teams",
+        "teams.country",
+        "teams.club",
+        "teams.logo",
+        "teams.coach",
+        "prizes",
+        "teams.players",
+        "introImage",
+        "minorImage",
       ],
     });
 
@@ -199,39 +199,35 @@ export class EventsService {
   }
 
   async getAllResults(eventId: number) {
-    // const qb = this.repository
-    //   .createQueryBuilder('event')
-    //   .leftJoinAndSelect('event.races', 'races')
-    //   .leftJoinAndSelect('races.teamResults', 'teamResults')
-    //   .leftJoinAndSelect('teamResults.team', 'team')
-    //   .leftJoinAndSelect('team.logo', 'logo')
-    //   .leftJoinAndSelect('teamResults.runnerResults', 'runnerResults')
-    //   .leftJoinAndSelect('runnerResults.runner', 'runner')
-    //   .leftJoinAndSelect('runner', 'runner.image')
-    //   .where('event.id = :eventId', { eventId });
-
     const event = await this.repository.findOne({
       where: { id: eventId },
       relations: [
-        'introImage',
-        'races',
-        'races.winner',
-        'races.teams',
-        'races.teamResults',
-        'races.teamResults.team',
-        'races.teamResults.team.logo',
-        'races.teamResults.runnerResults',
-        'races.teamResults.runnerResults.runner',
-        'races.teamResults.runnerResults.runner.user.image',
+        "introImage",
+        "races",
+        "races.winner",
+        "races.teams",
+        "races.teamResults",
+        "races.teamResults.team",
+        "races.teamResults.team.logo",
+        "races.teamResults.runnerResults",
+        "races.teamResults.runnerResults.runner",
+        "races.teamResults.runnerResults.runner.user.image",
       ],
     });
+
+    if (event.startDateTime > new Date()) {
+      return {
+        notFinished: true,
+        eventTitle: event.title,
+      };
+    }
 
     const mensRaces: Race[] = [];
 
     const womensRaces: Race[] = [];
 
     event.races.forEach((race) => {
-      if (race.teams.some((team) => team.gender === 'male')) {
+      if (race.teams.some((team) => team.gender === "male")) {
         mensRaces.push(race);
       } else {
         womensRaces.push(race);
@@ -258,8 +254,8 @@ export class EventsService {
       female: {},
     };
 
-    addTeamResults(mensRaces, teamResults, 'male');
-    addTeamResults(womensRaces, teamResults, 'female');
+    addTeamResults(mensRaces, teamResults, "male");
+    addTeamResults(womensRaces, teamResults, "female");
 
     const podium = {
       male: {
@@ -274,8 +270,8 @@ export class EventsService {
       },
     };
 
-    addToPodium(podium, teamResults, 'male');
-    addToPodium(podium, teamResults, 'female');
+    addToPodium(podium, teamResults, "male");
+    addToPodium(podium, teamResults, "female");
 
     const bestSportsmen: {
       [gender: string]: {
@@ -313,19 +309,19 @@ export class EventsService {
         );
 
         const firstPair = pacersJokers.filter(
-          (res) => res.runnerType === 'pacer-1' || res.runnerType === 'joker-1',
+          (res) => res.runnerType === "pacer-1" || res.runnerType === "joker-1",
         );
 
         const secondPair = pacersJokers.filter(
-          (res) => res.runnerType === 'pacer-2' || res.runnerType === 'joker-2',
+          (res) => res.runnerType === "pacer-2" || res.runnerType === "joker-2",
         );
 
         const firstPairResult = firstPair.find(
-          (res) => res.runnerType === 'joker-1',
+          (res) => res.runnerType === "joker-1",
         )?.finalResultInMs;
 
         const secondPairResult = secondPair.find(
-          (res) => res.runnerType === 'joker-2',
+          (res) => res.runnerType === "joker-2",
         )?.finalResultInMs;
 
         if (!firstPairResult || !secondPairResult) return;
@@ -389,18 +385,19 @@ export class EventsService {
       bestSportsmen,
       bestJokerPair,
       racesByType,
+      notFinished: false,
     };
   }
 
   async count() {
     const count = await this.repository.count();
-    return { 'Total Events': count };
+    return { "Total Events": count };
   }
 
   async updateInformation(id: number, body: UpdateEventInfo) {
     const event = await this.repository.findOne({ where: { id } });
     if (!event) {
-      throw new Error('Event not found');
+      throw new Error("Event not found");
     }
 
     const { title, description, startDateTime, endDate } = body;
@@ -416,7 +413,7 @@ export class EventsService {
   async updatePrizes(id: number, body: UpdateEventPrizes) {
     const event = await this.repository.findOne({
       where: { id },
-      relations: ['prizes'],
+      relations: ["prizes"],
     });
 
     event.prizes = body.prizes;
@@ -427,7 +424,7 @@ export class EventsService {
   async updateMedia(id: number, body: UpdateEventMedia) {
     const event = await this.repository.findOne({
       where: { id },
-      relations: ['introImage', 'minorImage'],
+      relations: ["introImage", "minorImage"],
     });
 
     event.introImage = body.introImage || event.introImage;
@@ -459,7 +456,7 @@ type ITeamResults = {
 export const addTeamResults = (
   races: Race[],
   teamResults: ITeamResults,
-  gender: 'male' | 'female',
+  gender: "male" | "female",
 ) => {
   races.forEach((race) => {
     race.teamResults.forEach((teamResult) => {
@@ -479,7 +476,7 @@ export const addTeamResults = (
 export const addToPodium = (
   podium: any,
   teamResults: ITeamResults,
-  gender: 'male' | 'female',
+  gender: "male" | "female",
 ) => {
   Object.values(teamResults[gender]).forEach((teamResult) => {
     if (

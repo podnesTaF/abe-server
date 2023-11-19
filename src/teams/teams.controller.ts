@@ -8,13 +8,13 @@ import {
   Query,
   Request,
   UseGuards,
-} from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { CreateCoachDto } from 'src/coach/dto/create-coach-dto';
-import { CreateTeamDto } from './dto/create-team.dto';
-import { TeamsService } from './teams.service';
+} from "@nestjs/common";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { CreateCoachDto } from "src/coach/dto/create-coach-dto";
+import { CreateTeamDto } from "./dto/create-team.dto";
+import { TeamsService } from "./teams.service";
 
-@Controller('teams')
+@Controller("teams")
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
@@ -24,7 +24,7 @@ export class TeamsController {
     return this.teamsService.create(createTeamDto, req.user.id);
   }
 
-  @Post('/register')
+  @Post("/register")
   @UseGuards(JwtAuthGuard)
   registerTeam(
     @Request() req,
@@ -50,31 +50,43 @@ export class TeamsController {
     return this.teamsService.findAll(queries, +req?.user?.id);
   }
 
-  @Get('/previews')
+  @Get("/previews")
   findAllPreviews() {
     return this.teamsService.findAllPreviews();
   }
 
-  @Get('/snippet/:eventId')
-  findAllSnippet(@Param('eventId') eventId: string) {
+  @Get("/top")
+  findTopTeams(
+    @Query() queries: { count?: string; gender: "male" | "female" },
+  ) {
+    return this.teamsService.findTopTeams(queries);
+  }
+
+  @Get("/snippet/:eventId")
+  findAllSnippet(@Param("eventId") eventId: string) {
     return this.teamsService.findAllSnippetByEventId(+eventId);
   }
 
-  @Get('/my')
+  @Get("/my")
   @UseGuards(JwtAuthGuard)
   findMyTeams(@Request() req: { user?: { id?: number } }) {
     if (!req.user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
     return this.teamsService.findAllByUser(+req.user.id);
   }
 
-  @Get('/user/:id')
-  findUsers(@Param('id') id: string) {
+  @Get("/user/:id")
+  findUsers(@Param("id") id: string) {
     return this.teamsService.findAllByUser(+id);
   }
 
-  @Get('/registrations')
+  @Get("/manager/:id")
+  findManagerTeams(@Param("id") id: string) {
+    return this.teamsService.findAllManagerTeams(+id);
+  }
+
+  @Get("/registrations")
   @UseGuards(JwtAuthGuard)
   findAllReg(
     @Request() req,
@@ -83,39 +95,42 @@ export class TeamsController {
     return this.teamsService.getRegistrations(+req.user.id, query);
   }
 
-  @Get('/:id/user-registrations')
-  findAllRegByUser(@Param('id') id: string) {
-    return this.teamsService.getRegistrationsByPlayerId(+id);
+  @Get("/:id/user-registrations")
+  findAllRegByUser(
+    @Param("id") id: string,
+    @Query() query: { past?: boolean; year?: string },
+  ) {
+    return this.teamsService.getRegistrationsByPlayerId(+id, query);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return this.teamsService.findOne(+id);
   }
 
-  @Get('count')
+  @Get("count")
   count() {
     return this.teamsService.count();
   }
 
-  @Get('count/all')
+  @Get("count/all")
   countAll() {
     return this.teamsService.countAll();
   }
 
-  @Patch('/personal-bests')
+  @Patch("/personal-bests")
   updatePersonalBests() {
     return this.teamsService.updatePersonalBestsForAllTeams();
   }
 
-  @Patch('/total-points')
-  calcuateTotals(@Query('gender') gender?: string) {
-    return this.teamsService.calculateTeamsPoints(gender || 'male');
+  @Patch("/total-points")
+  calcuateTotals(@Query("gender") gender?: string) {
+    return this.teamsService.calculateTeamsPoints(gender || "male");
   }
 
-  @Patch(':id')
+  @Patch(":id")
   update(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body()
     dto: {
       name: string;

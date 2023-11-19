@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Query } from "@nestjs/common";
+import { Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { RunnerService } from "../services/runner.service";
 
 @Controller("runners")
@@ -15,6 +15,24 @@ export class RunnerController {
     @Query() queries: { count: number; gender?: "male" | "female" },
   ) {
     return this.runnerService.getTopRunners(queries);
+  }
+
+  @Get("/previews")
+  getRunnerPreviews(
+    @Query()
+    queries: {
+      type?: "search" | "all";
+      query: string;
+      limit?: string;
+      page?: string;
+    },
+  ) {
+    return this.runnerService.getRunnerPreviews(queries);
+  }
+
+  @Get("/manager/:id")
+  getRunnersByManager(@Param("id") id: string) {
+    return this.runnerService.getRunnersByManager(+id);
   }
 
   @Post("/points/calculate")

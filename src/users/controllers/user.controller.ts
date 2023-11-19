@@ -7,23 +7,23 @@ import {
   Post,
   Request,
   UseGuards,
-} from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { CompleteVerificationDto } from '../dtos/complete-verification.dto';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { UpdateUserDto } from '../dtos/update-user.dto';
-import { UserService } from '../services/user.service';
+} from "@nestjs/common";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { CompleteVerificationDto } from "../dtos/complete-verification.dto";
+import { CreateUserDto } from "../dtos/create-user.dto";
+import { UpdateUserDto } from "../dtos/update-user.dto";
+import { UserService } from "../services/user.service";
 
-@Controller('users')
+@Controller("users")
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/register')
+  @Post("/register")
   register(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }
 
-  @Post('/verify')
+  @Post("/verify")
   verifyMember(
     @Body()
     dto: CompleteVerificationDto,
@@ -36,24 +36,24 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get('/me')
+  @Get("/me")
   @UseGuards(JwtAuthGuard)
   getMe(@Request() req) {
     return this.userService.findById(req.user.id);
   }
 
-  @Get(':id')
-  getUserProfile(@Param('id') id: number) {
-    return this.userService.findById(id);
+  @Get(":id")
+  getUserProfile(@Param("id") id: number) {
+    return this.userService.findById(+id);
   }
 
-  @Patch('/image')
+  @Patch("/image")
   @UseGuards(JwtAuthGuard)
   updateImage(@Request() req, @Body() body: { imageId: number }) {
     return this.userService.updateImage(req.user.id, body.imageId);
   }
 
-  @Patch('/password')
+  @Patch("/password")
   @UseGuards(JwtAuthGuard)
   updatePassword(
     @Request() req,
@@ -63,13 +63,13 @@ export class UserController {
     return this.userService.changePassword(req.user.id, body);
   }
 
-  @Patch('/profile-data')
+  @Patch("/profile-data")
   @UseGuards(JwtAuthGuard)
   updateProfileData(@Request() req, @Body() body: UpdateUserDto) {
     return this.userService.updateProfileData(req.user.id, body);
   }
 
-  @Get('count')
+  @Get("count")
   count() {
     return this.userService.count();
   }
