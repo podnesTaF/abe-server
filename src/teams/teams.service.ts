@@ -337,6 +337,10 @@ export class TeamsService {
         "players.user.country",
         "club.runners",
         "personalBest",
+        "races",
+        "races.teams",
+        "races.teamResults",
+        "races.teamResults.team",
       ],
     });
   }
