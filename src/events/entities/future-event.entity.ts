@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Media } from "src/media/entities/media.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class FutureEvent {
@@ -10,6 +11,9 @@ export class FutureEvent {
 
   @Column({ nullable: true })
   description?: string;
+
+  @ManyToOne(() => Media)
+  introImage: Media;
 
   @Column()
   season: string;
