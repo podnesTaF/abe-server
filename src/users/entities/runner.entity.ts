@@ -1,8 +1,8 @@
-import { Best } from 'src/bests/entities/best.entity';
-import { JoinRequest } from 'src/club-requests/entities/club-request.entity';
-import { Club } from 'src/club/entities/club.entity';
-import { RunnerResult } from 'src/runner-results/entities/runner-results.entity';
-import { Team } from 'src/teams/entities/team.entity';
+import { Best } from "src/bests/entities/best.entity";
+import { JoinRequest } from "src/club-requests/entities/club-request.entity";
+import { Club } from "src/club/entities/club.entity";
+import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
+import { Team } from "src/teams/entities/team.entity";
 import {
   Column,
   Entity,
@@ -13,12 +13,12 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-} from 'typeorm';
-import { User } from './user.entity';
+} from "typeorm";
+import { User } from "./user.entity";
 
 export enum RunnerCategory {
-  PROFESSIONAL = 'professional',
-  AMATEUR = 'amateur',
+  PROFESSIONAL = "professional",
+  AMATEUR = "amateur",
 }
 
 @Entity()
@@ -35,7 +35,7 @@ export class Runner {
   @Column({ nullable: true })
   worldAthleticsUrl: string;
 
-  @Column({ default: 'professional' })
+  @Column({ default: "professional" })
   category: RunnerCategory;
 
   @OneToMany(() => RunnerResult, (result) => result.runner)
@@ -52,13 +52,13 @@ export class Runner {
 
   @ManyToMany(() => Team, (team) => team.players, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: "CASCADE",
   })
   teamsAsRunner: Team[];
 
   @ManyToOne(() => Club, (club) => club.runners, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: "CASCADE",
   })
   club: Club;
 
@@ -75,4 +75,7 @@ export class Runner {
   @ManyToMany(() => JoinRequest, (joinRequest) => joinRequest.runner)
   @JoinTable()
   joinRequests: JoinRequest[];
+
+  @ManyToMany(() => User, (user) => user.followingRunners)
+  followers: User[];
 }

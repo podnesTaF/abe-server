@@ -38,6 +38,7 @@ import { SpectatorModule } from "./users/modules/spectator.module";
 import { UserModule } from "./users/modules/user.module";
 import { VerifyMemberModule } from "./verify-member/verify-member.module";
 import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registrations.module";
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registr
     RunnerModule,
     FeedbacksModule,
     FutureEventsModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

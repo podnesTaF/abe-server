@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ContentService } from 'src/content/content.service';
-import { CreateHashtagDto } from 'src/hashtag/dto/create-hashtag.dto';
-import { HashtagService } from 'src/hashtag/hashtag.service';
-import { Repository } from 'typeorm';
-import { CreateNewsDto, updateNewsDto } from './dto/create.dto';
-import { News } from './entities/news.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ContentService } from "src/content/content.service";
+import { CreateHashtagDto } from "src/hashtag/dto/create-hashtag.dto";
+import { HashtagService } from "src/hashtag/hashtag.service";
+import { Repository } from "typeorm";
+import { CreateNewsDto, updateNewsDto } from "./dto/create.dto";
+import { News } from "./entities/news.entity";
 
 @Injectable()
 export class NewsService {
@@ -18,10 +18,10 @@ export class NewsService {
 
   getNews(limit?: number, page?: number) {
     return this.repository.find({
-      relations: ['contents', 'hashtags', 'contents.media', 'mainImage'],
+      relations: ["contents", "hashtags", "contents.media", "mainImage"],
       take: limit,
       skip: page ? (page - 1) * limit : 0,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -44,14 +44,14 @@ export class NewsService {
     const totalPages = Math.ceil(newsCount / (limit || newsCount));
 
     const newsPreviews = newsList.map((news) => {
-      const content = news.contents.find((item) => item.type === 'text');
-      const media = news.contents.find((item) => item.type === 'image')?.media;
+      const content = news.contents.find((item) => item.type === "text");
+      const media = news.contents.find((item) => item.type === "image")?.media;
 
-      let previewText = '';
+      let previewText = "";
       if (content) {
         previewText =
           content.text.length > (textLength || 90)
-            ? content.text.substring(0, textLength || 90) + '...'
+            ? content.text.substring(0, textLength || 90) + "..."
             : content.text;
       }
 
@@ -59,7 +59,7 @@ export class NewsService {
         id: news.id,
         title: news.title,
         previewText: previewText,
-        smallImageUrl: media ? media.mediaUrl : '',
+        smallImageUrl: media ? media.mediaUrl : "",
         createdAt: news.createdAt,
         mainImage: news.mainImage,
       };
@@ -72,13 +72,13 @@ export class NewsService {
     const news = await this.repository.findOne({
       where: { id },
       relations: [
-        'contents',
-        'hashtags',
-        'contents.media',
-        'mainImage',
-        'hashtags.news',
-        'hashtags.news.contents',
-        'hashtags.news.contents.media',
+        "contents",
+        "hashtags",
+        "contents.media",
+        "mainImage",
+        "hashtags.news",
+        "hashtags.news.contents",
+        "hashtags.news.contents.media",
         // 'hashtags.events',
       ],
     });
@@ -127,7 +127,7 @@ export class NewsService {
     for (const content of dto.contents) {
       const newContent = await this.contentService.create(
         { ...content },
-        news.id,
+        { newsId: news.id },
       );
       contents.push(newContent);
     }
@@ -149,7 +149,7 @@ export class NewsService {
   async updateNews(id: number, body: updateNewsDto) {
     const news = await this.repository.findOne({
       where: { id },
-      relations: ['hashtags', 'contents'],
+      relations: ["hashtags", "contents"],
     });
 
     const newHashtags = [];
@@ -170,7 +170,7 @@ export class NewsService {
       if (!content.id) {
         const newContent = await this.contentService.create(
           { ...content },
-          news.id,
+          { newsId: news.id },
         );
         newContents.push(newContent);
       } else {

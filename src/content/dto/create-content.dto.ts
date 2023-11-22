@@ -1,5 +1,5 @@
-import { IsObject, IsOptional, IsString } from 'class-validator';
-import { Media } from 'src/media/entities/media.entity';
+import { IsObject, IsOptional, IsString } from "class-validator";
+import { Media } from "src/media/entities/media.entity";
 
 export class CreateContentDto {
   @IsString()

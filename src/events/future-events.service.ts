@@ -15,6 +15,6 @@ export class FutureEventsService {
   }
 
   getAll() {
-    return this.repository.find();
+    return this.repository.find({ relations: ["introImage"] });
   }
 }

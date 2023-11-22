@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateContentDto } from './dto/create-content.dto';
-import { UpdateContentDto } from './dto/update-content.dto';
-import { Content } from './entities/content.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { CreateContentDto } from "./dto/create-content.dto";
+import { UpdateContentDto } from "./dto/update-content.dto";
+import { Content } from "./entities/content.entity";
 
 @Injectable()
 export class ContentService {
@@ -12,8 +12,15 @@ export class ContentService {
     private repository: Repository<Content>,
   ) {}
 
-  create(createContentDto: CreateContentDto, newsId: number) {
-    return this.repository.save({ ...createContentDto, newsId });
+  create(
+    createContentDto: CreateContentDto,
+    { newsId, notificationId }: { newsId?: number; notificationId?: number },
+  ) {
+    return this.repository.save({
+      ...createContentDto,
+      notificationId: notificationId,
+      newsId,
+    });
   }
 
   findAll() {

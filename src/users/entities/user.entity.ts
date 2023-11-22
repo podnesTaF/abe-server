@@ -1,23 +1,27 @@
-import { Country } from 'src/country/entity/country.entity';
-import { Feedback } from 'src/feedbacks/entities/feedback.entity';
-import { Media } from 'src/media/entities/media.entity';
+import { Country } from "src/country/entity/country.entity";
+import { Feedback } from "src/feedbacks/entities/feedback.entity";
+import { Media } from "src/media/entities/media.entity";
+import { NotificationEntity } from "src/notification/entities/notification.entity";
+import { Team } from "src/teams/entities/team.entity";
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
-import { Manager } from './manager.entity';
-import { Runner } from './runner.entity';
-import { Spectator } from './spectator.entity';
+} from "typeorm";
+import { Manager } from "./manager.entity";
+import { Runner } from "./runner.entity";
+import { Spectator } from "./spectator.entity";
 
 export enum MemberRole {
-  RUNNER = 'runner',
-  SPECTATOR = 'spectator',
+  RUNNER = "runner",
+  SPECTATOR = "spectator",
 }
 
 @Entity()
@@ -34,10 +38,10 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ default: 'user' })
+  @Column({ default: "user" })
   role: string;
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ nullable: true, type: "text" })
   interest: string;
 
   @Column({ default: false })
@@ -47,7 +51,7 @@ export class User {
   city: string;
 
   @ManyToOne(() => Country, (country) => country.players, {
-    onDelete: 'SET NULL',
+    onDelete: "SET NULL",
     nullable: true,
   })
   country: Country;
@@ -58,10 +62,10 @@ export class User {
   @ManyToOne(() => Media, { nullable: true })
   image: Media;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: "timestamp" })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: "timestamp" })
   updatedAt: Date;
 
   @Column({ default: false })
@@ -87,4 +91,21 @@ export class User {
 
   @OneToMany(() => Feedback, (feedback) => feedback.user)
   feedbacks: Feedback[];
+
+  @OneToMany(() => NotificationEntity, (notification) => notification.sender)
+  sentNotifications: NotificationEntity[];
+
+  @ManyToMany(
+    () => NotificationEntity,
+    (notification) => notification.receivers,
+  )
+  receivedNotifications: NotificationEntity[];
+
+  @ManyToMany(() => Runner, (runner) => runner.followers)
+  @JoinTable()
+  followingRunners: Runner[];
+
+  @ManyToMany(() => Team, (team) => team.followers)
+  @JoinTable()
+  followingTeams: Team[];
 }

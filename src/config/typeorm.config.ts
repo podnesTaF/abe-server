@@ -15,6 +15,7 @@ import { Location } from "src/locations/entities/locations.entity";
 import { Media } from "src/media/entities/media.entity";
 import { Member } from "src/member/entities/member.entity";
 import { News } from "src/news/entities/news.entity";
+import { NotificationEntity } from "src/notification/entities/notification.entity";
 import { PlayerEntity } from "src/players/entities/player.entity";
 import { PrizeEntity } from "src/prizes/entities/prize.entity";
 import { Race } from "src/race/entities/race.entity";
@@ -68,6 +69,7 @@ const config: TypeOrmModuleOptions = {
     Spectator,
     Feedback,
     FutureEvent,
+    NotificationEntity,
   ],
   synchronize: true,
 };
