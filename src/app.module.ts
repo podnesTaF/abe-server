@@ -24,6 +24,7 @@ import { LocationsModule } from "./locations/locations.module";
 import { MediaModule } from "./media/media.module";
 import { MemberModule } from "./member/member.module";
 import { NewsModule } from "./news/news.module";
+import { NotificationModule } from "./notification/notification.module";
 import { PlayersModule } from "./players/players.module";
 import { PrizesModule } from "./prizes/prizes.module";
 import { RaceModule } from "./race/race.module";
@@ -38,7 +39,6 @@ import { SpectatorModule } from "./users/modules/spectator.module";
 import { UserModule } from "./users/modules/user.module";
 import { VerifyMemberModule } from "./verify-member/verify-member.module";
 import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registrations.module";
-import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
