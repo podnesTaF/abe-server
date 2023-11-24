@@ -97,7 +97,8 @@ export class NotificationService {
   getUserReceivedNotifications(userId: number) {
     return this.notificationRepository.find({
       where: { receivers: { id: userId } },
-      relations: ["contents", "sender"],
+      relations: ["contents", "sender", "sender.image"],
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -127,7 +128,7 @@ export class NotificationService {
 
     notification.status = "read";
 
-    return notification;
+    return this.notificationRepository.save(notification);
   }
 
   update(id: number, updateNotificationDto: UpdateNotificationDto) {
