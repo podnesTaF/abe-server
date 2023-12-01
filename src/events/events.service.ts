@@ -1,13 +1,16 @@
 import { Storage } from "@google-cloud/storage";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { Content } from "src/content/entities/content.entity";
 import { CountryService } from "src/country/country.service";
 import { LocationsService } from "src/locations/locations.service";
 import { PrizesService } from "src/prizes/prizes.service";
 import { Race } from "src/race/entities/race.entity";
 import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
+import { TeamRegistration } from "src/team-registration/entities/team-registration.entity";
 import { Team } from "src/teams/entities/team.entity";
 import { Runner } from "src/users/entities/runner.entity";
+import { User } from "src/users/entities/user.entity";
 import { formatDate } from "src/utils/date-formater";
 import { Repository } from "typeorm";
 import { CreateEventDto } from "./dto/create-event.dto";
@@ -23,6 +26,10 @@ export class EventsService {
   constructor(
     @InjectRepository(Event)
     private repository: Repository<Event>,
+    @InjectRepository(Content)
+    private contentRepository: Repository<Content>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private locationsService: LocationsService,
     private prizeService: PrizesService,
     private countriesService: CountryService,
@@ -43,7 +50,7 @@ export class EventsService {
 
     const prizes = [];
 
-    for (let i = 0; i < eventDto.prizes.length; i++) {
+    for (let i = 0; i < eventDto.prizes?.length; i++) {
       const prize = eventDto.prizes[i];
       const createdPrize = await this.prizeService.create(prize);
       prizes.push(createdPrize);
@@ -58,6 +65,14 @@ export class EventsService {
       minorImage,
     } = eventDto;
 
+    const contents = [];
+
+    for (let i = 0; i < eventDto.contents.length; i++) {
+      const content = eventDto.contents[i];
+      const createdContent = await this.contentRepository.save(content);
+      contents.push(createdContent);
+    }
+
     return this.repository.save({
       title,
       description,
@@ -67,6 +82,7 @@ export class EventsService {
       minorImage: minorImage || null,
       location,
       prizes,
+      contents,
     });
   }
 
@@ -153,6 +169,89 @@ export class EventsService {
     return this.repository.find({
       select: ["id", "title"],
     });
+  }
+
+  async getEventInfo({
+    eventId,
+    userId,
+  }: {
+    eventId: number;
+    userId?: number;
+  }) {
+    console.log(eventId, userId);
+    const event = await this.repository.findOne({
+      where: { id: eventId },
+      relations: [
+        "introImage",
+        "minorImage",
+        "location",
+        "location.country",
+        "prizes",
+        "contents",
+        "viewerRegistrations",
+        "teamRegistrations",
+        "teamRegistrations.team",
+        "teamRegistrations.team.players",
+        "teamRegistrations.team.manager",
+        "teamRegistrations.coach",
+      ],
+    });
+
+    let user: User | undefined;
+
+    if (userId) {
+      user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: [
+          "runner.teamsAsRunner",
+          "manager",
+          "manager.teams",
+          "coach",
+        ],
+      });
+    }
+
+    let managerTeamRegistrations: TeamRegistration[] = [];
+    let allTeamsRegistered: boolean = false;
+
+    if (user?.manager) {
+      managerTeamRegistrations = event.teamRegistrations.filter(
+        (r) => r.team.manager.id === user.manager.id,
+      );
+
+      allTeamsRegistered =
+        user.manager.teams.length === managerTeamRegistrations.length;
+    }
+
+    let runnerTeamRegistrations: TeamRegistration[] = [];
+
+    if (user?.runner) {
+      runnerTeamRegistrations = event.teamRegistrations.filter((r) =>
+        r.team.players.some((player) => player.id === user.runner.id),
+      );
+    }
+
+    let coachTeamRegistrations: TeamRegistration[] = [];
+
+    if (user?.coach) {
+      coachTeamRegistrations = event.teamRegistrations.filter(
+        (r) => r.coach.id === user.coach.id,
+      );
+    }
+
+    const isRegisteredToVisit = event.viewerRegistrations.some(
+      (reg) => reg.viewer.id === userId,
+    );
+
+    return {
+      ...event,
+      isRegisteredToVisit,
+      isOpenToRegister: event.startDateTime > new Date(),
+      managerTeamRegistrations,
+      runnerTeamRegistrations,
+      coachTeamRegistrations,
+      allTeamsRegistered,
+    };
   }
 
   async getEventById(id: number) {

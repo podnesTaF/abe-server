@@ -2,7 +2,9 @@ import { Club } from "src/club/entities/club.entity";
 import { Country } from "src/country/entity/country.entity";
 import { Event } from "src/events/entities/event.entity";
 import { Media } from "src/media/entities/media.entity";
+import { RaceRegistration } from "src/race-registration/entities/race-registration.entity";
 import { Race } from "src/race/entities/race.entity";
+import { TeamRegistration } from "src/team-registration/entities/team-registration.entity";
 import { TeamResult } from "src/team-results/entities/team-results.entity";
 import { Coach } from "src/users/entities/coach.entity";
 import { Manager } from "src/users/entities/manager.entity";
@@ -78,6 +80,7 @@ export class Team {
   })
   players: Runner[];
 
+  // to remove
   @ManyToMany(() => Event, (event) => event.teams, {
     onDelete: "CASCADE",
   })
@@ -94,6 +97,15 @@ export class Team {
   })
   events: Event[];
 
+  @OneToMany(
+    () => TeamRegistration,
+    (teamRegistration) => teamRegistration.team,
+    {
+      nullable: true,
+    },
+  )
+  eventRegistrations: TeamRegistration[];
+
   @OneToMany(() => Race, (race) => race.winner, {
     nullable: true,
     onDelete: "CASCADE",
@@ -103,6 +115,13 @@ export class Team {
   @OneToMany(() => TeamResult, (teamResult) => teamResult.team)
   results: TeamResult[];
 
+  @OneToMany(
+    () => RaceRegistration,
+    (raceRegistration) => raceRegistration.team,
+  )
+  raceRegistrations: RaceRegistration[];
+
+  // TO REMOVE
   @ManyToMany(() => Race, (race) => race.teams)
   races: Race[];
 

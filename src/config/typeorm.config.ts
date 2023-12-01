@@ -17,10 +17,13 @@ import { News } from "src/news/entities/news.entity";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
 import { PlayerEntity } from "src/players/entities/player.entity";
 import { PrizeEntity } from "src/prizes/entities/prize.entity";
+import { RaceRegistration } from "src/race-registration/entities/race-registration.entity";
 import { Race } from "src/race/entities/race.entity";
 import { ResetUser } from "src/reset-user/entities/reset-user.entity";
 import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
 import { Split } from "src/splits/entities/splits.entity";
+import { TeamRaceRunner } from "src/team-race-runner/entities/team-race-runner.entity";
+import { TeamRegistration } from "src/team-registration/entities/team-registration.entity";
 import { TeamResult } from "src/team-results/entities/team-results.entity";
 import { Team } from "src/teams/entities/team.entity";
 import { Coach } from "src/users/entities/coach.entity";
@@ -69,7 +72,10 @@ const config: TypeOrmModuleOptions = {
     Spectator,
     Feedback,
     FutureEvent,
+    TeamRegistration,
     NotificationEntity,
+    RaceRegistration,
+    TeamRaceRunner,
   ],
   synchronize: true,
 };

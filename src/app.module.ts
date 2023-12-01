@@ -26,10 +26,13 @@ import { NewsModule } from "./news/news.module";
 import { NotificationModule } from "./notification/notification.module";
 import { PlayersModule } from "./players/players.module";
 import { PrizesModule } from "./prizes/prizes.module";
+import { RaceRegistrationModule } from "./race-registration/race-registration.module";
 import { RaceModule } from "./race/race.module";
 import { ResetUserModule } from "./reset-user/reset-user.module";
 import { RunnerResultsModule } from "./runner-results/runner-results.module";
 import { SplitsModule } from "./splits/splits.module";
+import { TeamRaceRunnerModule } from "./team-race-runner/team-race-runner.module";
+import { TeamRegistrationModule } from "./team-registration/team-registration.module";
 import { TeamResultsModule } from "./team-results/team-results.module";
 import { TeamsModule } from "./teams/teams.module";
 import { CoachModule } from "./users/modules/coach.module";
@@ -80,6 +83,9 @@ import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registr
     FeedbacksModule,
     FutureEventsModule,
     NotificationModule,
+    TeamRegistrationModule,
+    RaceRegistrationModule,
+    TeamRaceRunnerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

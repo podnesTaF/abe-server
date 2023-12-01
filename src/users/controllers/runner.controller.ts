@@ -46,6 +46,14 @@ export class RunnerController {
     return this.runnerService.getRunnersByManager(+id);
   }
 
+  @Get("/team/:id")
+  getRunnersByTeam(@Param("id") id: string) {
+    if (isNaN(+id)) {
+      return null;
+    }
+    return this.runnerService.getRunnersByTeam(+id);
+  }
+
   @Get("/followings")
   @UseGuards(JwtAuthGuard)
   getFollowings(@Request() req: any) {
