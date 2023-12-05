@@ -46,6 +46,14 @@ export class RunnerController {
     return this.runnerService.getRunnersByManager(+id);
   }
 
+  @Get("/event/:id")
+  getRunnersByEvent(
+    @Param("id") id: string,
+    @Query() queries: { teamId?: string; gender?: string },
+  ) {
+    return this.runnerService.getRunnersByEvent({ eventId: +id, queries });
+  }
+
   @Get("/team/:id")
   getRunnersByTeam(@Param("id") id: string) {
     if (isNaN(+id)) {
