@@ -251,10 +251,9 @@ export class RunnerService {
       };
     }
 
-    qb.andWhere("user.name LIKE :query", { query: `%${query}%` }).orWhere(
-      "user.surname LIKE :query",
-      { query: `%${query}%` },
-    );
+    qb.andWhere("user.name LIKE :query OR user.surname LIKE :query", {
+      query: `%${query}%`,
+    });
 
     if (authId) {
       qb.leftJoinAndSelect("runner.followers", "followers");
