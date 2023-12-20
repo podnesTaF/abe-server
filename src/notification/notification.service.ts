@@ -115,7 +115,7 @@ export class NotificationService {
   }) {
     const notification = await this.notificationRepository.findOne({
       where: { id: notificationId },
-      relations: ["contents", "sender", "receivers"],
+      relations: ["contents", "sender", "receivers", "sender.image"],
     });
 
     if (!notification) {

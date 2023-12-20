@@ -7,7 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Event } from "src/events/entities/event.entity";
 import { Team } from "src/teams/entities/team.entity";
 import { Coach } from "src/users/entities/coach.entity";
-import { Repository } from "typeorm";
+import { MoreThan, Repository } from "typeorm";
 import { CreateTeamRegistrationDto } from "./dto/create-team-registration.dto";
 import { UpdateTeamRegistrationDto } from "./dto/update-team-registration.dto";
 import { TeamRegistration } from "./entities/team-registration.entity";
@@ -63,7 +63,10 @@ export class TeamRegistrationService {
   async findUserRegistrations(userId: number, role: string) {
     if (role === "manager") {
       return this.repository.find({
-        where: { team: { manager: { user: { id: userId } } } },
+        where: {
+          team: { manager: { user: { id: userId } } },
+          event: { startDateTime: MoreThan(new Date()) },
+        },
         relations: ["team", "event.location.country", "coach"],
       });
     } else if (role === "coach") {

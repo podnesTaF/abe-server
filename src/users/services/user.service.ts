@@ -108,6 +108,20 @@ export class UserService {
     }
   }
 
+  async getFollowingTeams(userId: number) {
+    const userWithTeams = await this.repository.findOne({
+      where: { id: userId },
+      relations: [
+        "followingTeams",
+        "followingTeams.logo",
+        "followingTeams.teamImage",
+        "followingTeams.country",
+      ],
+    });
+
+    return userWithTeams.followingTeams;
+  }
+
   findAll() {
     return this.repository.find({
       select: ["id", "name", "surname", "email", "city", "country"],
