@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Content } from "src/content/entities/content.entity";
+import { Team } from "src/teams/entities/team.entity";
 import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { CreateNotificationDto } from "./dto/create-notification.dto";
@@ -15,6 +16,8 @@ export class NotificationService {
     private readonly notificationRepository: Repository<NotificationEntity>,
     @InjectRepository(Content)
     private readonly contentRepository: Repository<Content>,
+    @InjectRepository(Team)
+    private readonly teamRepository: Repository<Team>,
   ) {}
 
   async createUserNotification(
@@ -23,15 +26,37 @@ export class NotificationService {
   ) {
     const sender = await this.userRepository.findOne({
       where: { id: senderId },
+      relations: ["manager.teams"],
     });
 
     const receivers: User[] = [];
 
-    for (const receiverId of createNotificationDto.receivers) {
-      const receiver = await this.userRepository.findOne({
-        where: { id: receiverId },
+    if (createNotificationDto.type === "team") {
+      const teamId = createNotificationDto.receivers[0];
+      if (!sender.manager.teams.some((team) => team.id === teamId))
+        throw new BadRequestException(
+          "You can send notification only to your team",
+        );
+
+      const team = await this.teamRepository.findOne({
+        where: { id: teamId },
+        relations: ["players.user", "coach.user"],
       });
-      receivers.push(receiver);
+
+      if (!team) throw new BadRequestException("Team not found");
+
+      for (const player of team.players) {
+        receivers.push(player.user);
+      }
+
+      receivers.push(team.coach.user);
+    } else {
+      for (const receiverId of createNotificationDto.receivers) {
+        const receiver = await this.userRepository.findOne({
+          where: { id: receiverId },
+        });
+        receivers.push(receiver);
+      }
     }
 
     const notification = await this.notificationRepository.save({
@@ -52,7 +77,9 @@ export class NotificationService {
 
     notification.contents = contents;
 
-    return this.notificationRepository.save(notification);
+    await this.notificationRepository.save(notification);
+
+    return { success: true };
   }
 
   async createSystemNotification(createNotificationDto: CreateNotificationDto) {
