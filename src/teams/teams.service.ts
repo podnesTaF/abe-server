@@ -216,6 +216,13 @@ export class TeamsService {
     });
   }
 
+  getTeamInfo(id: number) {
+    return this.repository.findOne({
+      where: { id },
+      relations: ["logo", "country", "coach", "players", "teamImage"],
+    });
+  }
+
   async getRegistrations(
     userId: number,
     query: { page?: string; limit?: string },

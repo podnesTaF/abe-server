@@ -116,6 +116,11 @@ export class TeamsController {
     return this.teamsService.getRegistrationsByPlayerId(+id, query);
   }
 
+  @Get("info/:id")
+  findTeamInfo(@Param("id") id: string) {
+    return this.teamsService.getTeamInfo(+id);
+  }
+
   @Get(":id")
   @UseGuards(JwtOptionalAuthGuard)
   findOne(@Param("id") id: string, @Request() req: any) {
