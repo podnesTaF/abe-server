@@ -129,6 +129,14 @@ export class NotificationService {
     });
   }
 
+  getUserSentNotification(userId: number) {
+    return this.notificationRepository.find({
+      where: { sender: { id: userId } },
+      relations: ["contents", "sender", "sender.image"],
+      order: { createdAt: "DESC" },
+    });
+  }
+
   findAll() {
     return `This action returns all notification`;
   }
@@ -149,11 +157,16 @@ export class NotificationService {
       throw new Error("Notification not found");
     }
 
-    if (!notification.receivers.some((receiver) => receiver.id === userId)) {
+    if (
+      !notification.receivers.some((receiver) => receiver.id === userId) &&
+      notification.sender.id !== userId
+    ) {
       throw new Error("You are not authorized to view this notification");
     }
 
-    notification.status = "read";
+    if (notification.sender.id !== userId) {
+      notification.status = "read";
+    }
 
     return this.notificationRepository.save(notification);
   }

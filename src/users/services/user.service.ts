@@ -166,6 +166,9 @@ export class UserService {
         "manager.club",
         "spectator",
         "spectator.favoriteClubs",
+        "coach.teams.logo",
+        "coach",
+        "coach.teams.teamImage",
       ],
     });
 

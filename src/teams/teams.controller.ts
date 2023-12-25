@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -97,6 +98,14 @@ export class TeamsController {
     @Query() query: { unregistered?: boolean; eventId?: string },
   ) {
     return this.teamsService.findAllManagerTeams(+id, query);
+  }
+
+  @Get("/contacts/:id")
+  findTeamsContacts(@Param("id") id: string) {
+    if (isNaN(+id)) {
+      throw new BadRequestException("Wrong teamId provided");
+    }
+    return this.teamsService.getContactInfo(+id);
   }
 
   @Get("/registrations")

@@ -49,6 +49,13 @@ export class NotificationController {
     return this.notificationService.getUserReceivedNotifications(req.user.id);
   }
 
+  @Get("/sent")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("manager")
+  getUserSentNotifications(@Request() req: { user: { id: number } }) {
+    return this.notificationService.getUserSentNotification(req.user.id);
+  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard)
   findOne(@Request() req: any, @Param("id") id: string) {

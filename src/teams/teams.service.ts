@@ -223,6 +223,18 @@ export class TeamsService {
     });
   }
 
+  async getContactInfo(teamId: number) {
+    const team = await this.repository.findOne({
+      where: { id: teamId },
+      relations: ["manager.user.image", "coach.user.image"],
+    });
+
+    return {
+      manager: team.manager,
+      coach: team.coach,
+    };
+  }
+
   async getRegistrations(
     userId: number,
     query: { page?: string; limit?: string },
