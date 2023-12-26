@@ -159,12 +159,12 @@ export class NotificationService {
 
     if (
       !notification.receivers.some((receiver) => receiver.id === userId) &&
-      notification.sender.id !== userId
+      notification.sender?.id !== userId
     ) {
       throw new Error("You are not authorized to view this notification");
     }
 
-    if (notification.sender.id !== userId) {
+    if (notification.sender?.id !== userId) {
       notification.status = "read";
     }
 
