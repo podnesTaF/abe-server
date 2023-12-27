@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import * as admin from "firebase-admin";
 import { Content } from "src/content/entities/content.entity";
 import { Team } from "src/teams/entities/team.entity";
 import { User } from "src/users/entities/user.entity";
@@ -78,6 +79,17 @@ export class NotificationService {
     notification.contents = contents;
 
     await this.notificationRepository.save(notification);
+
+    const tokens = receivers
+      .map((user) => user.expoPushToken)
+      .filter((token) => token);
+
+    if (tokens.length > 0) {
+      await this.sendPushNotification(
+        tokens,
+        "There are new messages sent to you",
+      );
+    }
 
     return { success: true };
   }
@@ -169,6 +181,45 @@ export class NotificationService {
     }
 
     return this.notificationRepository.save(notification);
+  }
+
+  async sendPushNotification(tokens: string[], message: string) {
+    const messages = tokens.map((token) => ({
+      token: token,
+      notification: {
+        title: "New Message",
+        body: message,
+      },
+    }));
+
+    try {
+      const response = await admin.messaging().sendEach(messages);
+
+      if (response.failureCount > 0) {
+        const failedTokens = [];
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            console.log(`Failed to send message to token: ${tokens[idx]}`);
+            failedTokens.push(tokens[idx]);
+          }
+        });
+
+        if (failedTokens.length > 0) {
+          failedTokens.forEach((token) => this.removeFailedToken(token));
+        }
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Error sending notification:", error);
+    }
+  }
+
+  removeFailedToken(token: string) {
+    return this.userRepository.update(
+      { expoPushToken: token },
+      { expoPushToken: null },
+    );
   }
 
   update(id: number, updateNotificationDto: UpdateNotificationDto) {

@@ -88,6 +88,9 @@ export class User {
   @Column({ default: false })
   acceptNews: boolean;
 
+  @Column({ nullable: true })
+  expoPushToken?: string;
+
   @OneToOne(() => Spectator, (spectator) => spectator.user, {
     nullable: true,
   })
