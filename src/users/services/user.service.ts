@@ -187,11 +187,6 @@ export class UserService {
       : user;
   }
 
-  async updatePushToken(userId: number, expoPushToken: string): Promise<void> {
-    // Update the user entity with the new token
-    await this.repository.update(userId, { expoPushToken });
-  }
-
   async findByCond(cond: LoginUserDto | { id: number }) {
     const query = this.repository
       .createQueryBuilder("user")

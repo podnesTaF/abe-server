@@ -56,6 +56,12 @@ export class NotificationController {
     return this.notificationService.getUserSentNotification(req.user.id);
   }
 
+  @Get("/unread-count")
+  @UseGuards(JwtAuthGuard)
+  getUserUnreadNotificationsCount(@Request() req: { user: { id: number } }) {
+    return this.notificationService.getUnreadNotificationsCount(req.user.id);
+  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard)
   findOne(@Request() req: any, @Param("id") id: string) {

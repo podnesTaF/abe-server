@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import * as admin from "firebase-admin";
+import { Expo } from "expo-server-sdk";
 import { Content } from "src/content/entities/content.entity";
+import { TokenService } from "src/push-token/push-token.service";
 import { Team } from "src/teams/entities/team.entity";
 import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
@@ -19,7 +20,10 @@ export class NotificationService {
     private readonly contentRepository: Repository<Content>,
     @InjectRepository(Team)
     private readonly teamRepository: Repository<Team>,
+    private readonly pushTokenService: TokenService,
   ) {}
+
+  private expo = new Expo();
 
   async createUserNotification(
     createNotificationDto: CreateNotificationDto,
@@ -80,13 +84,15 @@ export class NotificationService {
 
     await this.notificationRepository.save(notification);
 
-    const tokens = receivers
-      .map((user) => user.expoPushToken)
-      .filter((token) => token);
+    const tokens = await this.pushTokenService.findAllReceiversTokens(
+      createNotificationDto.receivers,
+    );
 
-    if (tokens.length > 0) {
+    const tokenStrings = tokens.map((t) => t.token);
+
+    if (tokenStrings.length > 0) {
       await this.sendPushNotification(
-        tokens,
+        tokenStrings,
         "There are new messages sent to you",
       );
     }
@@ -184,42 +190,39 @@ export class NotificationService {
   }
 
   async sendPushNotification(tokens: string[], message: string) {
-    const messages = tokens.map((token) => ({
-      token: token,
-      notification: {
-        title: "New Message",
-        body: message,
-      },
-    }));
-
-    try {
-      const response = await admin.messaging().sendEach(messages);
-
-      if (response.failureCount > 0) {
-        const failedTokens = [];
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            console.log(`Failed to send message to token: ${tokens[idx]}`);
-            failedTokens.push(tokens[idx]);
-          }
-        });
-
-        if (failedTokens.length > 0) {
-          failedTokens.forEach((token) => this.removeFailedToken(token));
-        }
+    let messages = [];
+    for (let token of tokens) {
+      if (!Expo.isExpoPushToken(token)) {
+        console.error(`Push token ${token} is not a valid Expo push token`);
+        continue;
       }
 
-      return response;
-    } catch (error) {
-      console.error("Error sending notification:", error);
+      messages.push({
+        to: token,
+        sound: "default",
+        body: message,
+        data: { withSome: "data" },
+      });
     }
+
+    let chunks = this.expo.chunkPushNotifications(messages);
+    let tickets = [];
+    for (let chunk of chunks) {
+      try {
+        let ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...ticketChunk);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return tickets;
   }
 
-  removeFailedToken(token: string) {
-    return this.userRepository.update(
-      { expoPushToken: token },
-      { expoPushToken: null },
-    );
+  getUnreadNotificationsCount(userId: number) {
+    return this.notificationRepository.count({
+      where: { receivers: { id: userId }, status: "unread" },
+    });
   }
 
   update(id: number, updateNotificationDto: UpdateNotificationDto) {

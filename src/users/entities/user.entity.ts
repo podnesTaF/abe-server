@@ -2,6 +2,7 @@ import { Country } from "src/country/entity/country.entity";
 import { Feedback } from "src/feedbacks/entities/feedback.entity";
 import { Media } from "src/media/entities/media.entity";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
+import { PushToken } from "src/push-token/entities/push-token.entity";
 import { Team } from "src/teams/entities/team.entity";
 import { ViewerRegistration } from "src/viewer-registrations/entities/viewer-registration.entity";
 import {
@@ -88,9 +89,6 @@ export class User {
   @Column({ default: false })
   acceptNews: boolean;
 
-  @Column({ nullable: true })
-  expoPushToken?: string;
-
   @OneToOne(() => Spectator, (spectator) => spectator.user, {
     nullable: true,
   })
@@ -137,4 +135,7 @@ export class User {
     { nullable: true },
   )
   viewerRegistrations: ViewerRegistration[];
+
+  @OneToMany(() => PushToken, (pushToken) => pushToken.user)
+  pushTokens: PushToken[];
 }

@@ -58,12 +58,6 @@ export class UserController {
     return this.userService.getFollowingTeams(req.user.id);
   }
 
-  @Post("/update-token")
-  @UseGuards(JwtAuthGuard)
-  updatePushToken(@Body() body: { expoPushToken: string }, @Request() req) {
-    return this.userService.updatePushToken(req.user.id, body.expoPushToken);
-  }
-
   @Get(":id")
   getUserProfile(@Param("id") id: number, @Query() query: { authId: string }) {
     return this.userService.findById(+id, query.authId);

@@ -1,22 +1,11 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { config } from "dotenv";
-import * as admin from "firebase-admin";
 import { AppModule } from "./app.module";
-import { firebaseConfig } from "./config/firebase.config";
 
 async function bootstrap() {
   config();
   const app = await NestFactory.create(AppModule);
-
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      ...firebaseConfig,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    }),
-  });
 
   app.enableCors({
     origin: [/^(.*)/],
