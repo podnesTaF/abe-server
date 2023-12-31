@@ -48,6 +48,10 @@ export class TokenService {
     });
   }
 
+  findAllTokens(): Promise<PushToken[]> {
+    return this.pushTokenRepository.find();
+  }
+
   async removeToken(token: string) {
     await this.pushTokenRepository.delete({ token });
   }

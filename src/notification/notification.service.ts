@@ -189,7 +189,29 @@ export class NotificationService {
     return this.notificationRepository.save(notification);
   }
 
-  async sendPushNotification(tokens: string[], message: string) {
+  async sendGlobalNotification({
+    message,
+    title,
+  }: {
+    message: string;
+    title: string;
+  }) {
+    const allTokens = await this.pushTokenService.findAllTokens();
+
+    const tokenStrings = allTokens.map((t) => t.token);
+
+    if (tokenStrings.length > 0) {
+      await this.sendPushNotification(tokenStrings, message, title);
+    }
+
+    return { success: true };
+  }
+
+  async sendPushNotification(
+    tokens: string[],
+    message: string,
+    title?: string,
+  ) {
     let messages = [];
     for (let token of tokens) {
       if (!Expo.isExpoPushToken(token)) {
@@ -201,6 +223,7 @@ export class NotificationService {
         to: token,
         sound: "default",
         body: message,
+        title: title || "Ace Battle Mile",
         data: { withSome: "data" },
       });
     }

@@ -43,6 +43,13 @@ export class NotificationController {
     );
   }
 
+  @Post("/global")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  createGlobalNotification(@Body() dto: { message: string; title: string }) {
+    return this.notificationService.sendGlobalNotification(dto);
+  }
+
   @Get("/received")
   @UseGuards(JwtAuthGuard)
   getUserReceivedNotifications(@Request() req: { user: { id: number } }) {
