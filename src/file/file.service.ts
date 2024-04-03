@@ -1,23 +1,23 @@
-import { Storage } from '@google-cloud/storage';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import sharp from 'sharp';
-import { Event } from 'src/events/entities/event.entity';
-import { Media } from 'src/media/entities/media.entity';
-import { MediaService } from 'src/media/media.service';
-import { ViewerRegistration } from 'src/viewer-registrations/entities/viewer-registration.entity';
-import * as uuid from 'uuid';
-import { googleCloudStorageConfig } from './google-cloud-storage.config';
-import { getPDFDocument } from './utils/get-pdf-puppener';
+import { Storage } from "@google-cloud/storage";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import sharp from "sharp";
+import { Event } from "src/events/entities/event.entity";
+import { Media } from "src/media/entities/media.entity";
+import { MediaService } from "src/media/media.service";
+import { ViewerRegistration } from "src/viewer-registrations/entities/viewer-registration.entity";
+import * as uuid from "uuid";
+import { googleCloudStorageConfig } from "./google-cloud-storage.config";
+import { getPDFDocument } from "./utils/get-pdf-puppener";
 
 export enum FileType {
-  IMAGE = 'image',
-  AVATAR = 'avatar',
-  QRCODE = 'qrcode',
-  PDF = 'pdf',
+  IMAGE = "image",
+  AVATAR = "avatar",
+  QRCODE = "qrcode",
+  PDF = "pdf",
 }
 
 export const bucketBaseUrl =
-  'https://storage.googleapis.com/' + googleCloudStorageConfig.bucketName;
+  "https://storage.googleapis.com/" + googleCloudStorageConfig.bucketName;
 
 @Injectable()
 export class FileService {
@@ -30,8 +30,8 @@ export class FileService {
     storage: Storage,
   ): Promise<Media> {
     try {
-      const fileExtension = fileName.split('.').pop();
-      const fileDBName = uuid.v4().toString() + '.' + fileExtension;
+      const fileExtension = fileName.split(".").pop();
+      const fileDBName = uuid.v4().toString() + "." + fileExtension;
 
       const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
 
@@ -41,18 +41,18 @@ export class FileService {
         gzip: true,
       });
 
-      stream.on('error', (error) => {
+      stream.on("error", (error) => {
         throw new Error(`Error uploading file: ${error}`);
       });
 
-      stream.on('finish', () => {
+      stream.on("finish", () => {
         console.log(`File uploaded successfully: ${fileName}`);
       });
 
       stream.end(buffer);
 
       // Create a smaller version of the image for preview
-      const smallFileName = 'small_' + fileDBName;
+      const smallFileName = "small_" + fileDBName;
       const smallFileBuffer = await sharp(buffer).resize(200, 200).toBuffer();
 
       const smallFileUpload = bucket.file(`${type}/small/${smallFileName}`);
@@ -61,11 +61,11 @@ export class FileService {
         gzip: true,
       });
 
-      smallStream.on('error', (error) => {
+      smallStream.on("error", (error) => {
         throw new Error(`Error uploading small file: ${error}`);
       });
 
-      smallStream.on('finish', () => {
+      smallStream.on("finish", () => {
         console.log(`Small file uploaded successfully: ${smallFileName}`);
       });
 
@@ -101,9 +101,9 @@ export class FileService {
     try {
       const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
 
-      const [files] = await bucket.getFiles({ prefix: 'image/small/' });
+      const [files] = await bucket.getFiles({ prefix: "image/small/" });
 
-      return files.map((file) => bucketBaseUrl + '/' + file.name);
+      return files.map((file) => bucketBaseUrl + "/" + file.name);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

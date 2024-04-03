@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import sgMail from "@sendgrid/mail";
+import axios from "axios";
 import * as bcrypt from "bcrypt";
 import { Content } from "src/content/entities/content.entity";
 import { CountryService } from "src/country/country.service";
@@ -87,6 +88,46 @@ export class UserService {
     }
 
     return this.repository.save(newUser);
+  }
+
+  async migrate() {
+    const users = await this.repository.find({
+      relations: ["country", "runner", "spectator", "coach", "image", "avatar"],
+    });
+
+    const promises = users.map(async (user) => {
+      const newUser = this.migrateRunner(user);
+      await axios.post("http://localhost:4000/api/v2/users/migration", newUser);
+    });
+
+    const res = await Promise.all(promises);
+    return "success";
+  }
+
+  migrateRunner(user: User) {
+    const roles = ["user"];
+    if (user.role !== "spectator") {
+      roles.push(user.role);
+    }
+    const newUser = {
+      id: user.id,
+      firstName: user.name,
+      lastName: user.surname,
+      dateOfBirth: user.runner?.dateOfBirth || null,
+      countryName: user.country?.name || null,
+      genderName: user.runner?.gender || null,
+      categoryName: user.runner?.category || null,
+      city: user.city || null,
+      email: user.email,
+      phoneNumber: user.phone || null,
+      createdAt: user.createdAt,
+      verified: true,
+      avatarUrl: user.avatar?.mediaUrl || null,
+      imageUrl: user.image?.mediaUrl || null,
+      roles,
+    };
+
+    return newUser;
   }
 
   async completeVerification({

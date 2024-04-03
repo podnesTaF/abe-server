@@ -69,9 +69,13 @@ export class EventsController {
     });
   }
 
-  @Get(":id")
-  findById(@Param("id") id: string) {
-    return this.eventsService.getEventById(+id);
+  @Get(":value")
+  findByCond(
+    @Param("value") condValue: any,
+    @Query("cond") cond: string = "id",
+  ) {
+    console.log({ [cond]: condValue });
+    return this.eventsService.getEventByCond({ [cond]: condValue });
   }
 
   @Get("last")

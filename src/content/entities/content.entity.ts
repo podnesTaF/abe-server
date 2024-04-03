@@ -1,4 +1,5 @@
 import { Event } from "src/events/entities/event.entity";
+import { FutureEvent } from "src/events/entities/future-event.entity";
 import { Media } from "src/media/entities/media.entity";
 import { News } from "src/news/entities/news.entity";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
@@ -47,4 +48,10 @@ export class Content {
     },
   )
   notifications: NotificationEntity[];
+
+  @ManyToOne(() => FutureEvent, (futureEvent) => futureEvent.contents, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  futureEvent: FutureEvent;
 }

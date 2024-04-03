@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/roles/roles.guard";
@@ -20,13 +20,14 @@ export class FutureEventsController {
       introImage?: Media;
       description?: string;
       date?: Date;
+      locationInfo?: string;
     },
   ) {
     return this.futureEventsService.create(dto);
   }
 
   @Get()
-  findAll() {
-    return this.futureEventsService.getAll();
+  findAll(@Query() queries: { announced: boolean }) {
+    return this.futureEventsService.getAll(queries);
   }
 }

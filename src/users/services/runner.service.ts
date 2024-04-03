@@ -202,6 +202,36 @@ export class RunnerService {
     return runners;
   }
 
+  async getRankByGender(top: number): Promise<{
+    male: Runner[];
+    female: Runner[];
+  }> {
+    const topMale = await this.repository.find({
+      where: {
+        gender: "male",
+      },
+      order: {
+        rank: "ASC",
+      },
+      take: top,
+    });
+
+    const topFemale = await this.repository.find({
+      where: {
+        gender: "female",
+      },
+      order: {
+        rank: "ASC",
+      },
+      take: top,
+    });
+
+    return {
+      female: topFemale,
+      male: topMale,
+    };
+  }
+
   async getRunnersByTeam(id: number) {
     const qb = this.repository
       .createQueryBuilder("runner")
@@ -368,6 +398,7 @@ export class RunnerService {
     const qb = this.repository
       .createQueryBuilder("runner")
       .leftJoinAndSelect("runner.user", "user")
+      .leftJoinAndSelect("user.country", "country")
       .leftJoinAndSelect("user.image", "image")
       .leftJoinAndSelect("runner.teamsAsRunner", "teamsAsRunner")
       .where("runner.gender = :gender", { gender })

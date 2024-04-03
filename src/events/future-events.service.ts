@@ -16,9 +16,19 @@ export class FutureEventsService {
     return await this.repository.save(event);
   }
 
-  async getAll() {
+  async getAll(queries: { announced: boolean }) {
+    if (queries.announced) {
+      return {
+        futureEvents: await this.repository.find({
+          relations: ["introImage", "contents"],
+          where: { announced: true },
+          order: { id: "DESC" },
+        }),
+      };
+    }
     const futureEvents = await this.repository.find({
-      relations: ["introImage"],
+      relations: ["introImage", "contents"],
+      order: { id: "DESC" },
     });
     const events = await this.eventRepository
       .createQueryBuilder("event")

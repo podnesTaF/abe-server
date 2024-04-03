@@ -45,6 +45,9 @@ export class Event {
   @Column()
   endDate: Date;
 
+  @Column()
+  eventCode: string;
+
   @ManyToOne(() => Media, { nullable: true, eager: true })
   @JoinColumn()
   introImage: Media;

@@ -157,7 +157,7 @@ export class EventsService {
   async getAllInShort() {
     const events = await this.repository.find({
       relations: ["introImage"],
-      select: ["id", "title", "startDateTime", "introImage"],
+      select: ["id", "title", "startDateTime", "introImage", "eventCode"],
     });
     return events.map((event) => ({
       ...event,
@@ -178,7 +178,6 @@ export class EventsService {
     eventId: number;
     userId?: number;
   }) {
-    console.log(eventId, userId);
     const event = await this.repository.findOne({
       where: { id: eventId },
       relations: [
@@ -254,9 +253,9 @@ export class EventsService {
     };
   }
 
-  async getEventById(id: number) {
+  async getEventByCond(cond: { [key: string]: any }) {
     const event = await this.repository.findOne({
-      where: { id },
+      where: cond,
       relations: [
         "location",
         "location.country",
@@ -503,7 +502,9 @@ export class EventsService {
 
     event.title = title || event.title;
     event.description = description || event.description;
-    event.startDateTime = startDateTime ? new Date(startDateTime) : event.startDateTime;
+    event.startDateTime = startDateTime
+      ? new Date(startDateTime)
+      : event.startDateTime;
     event.endDate = endDate ? new Date(endDate) : event.endDate;
 
     return this.repository.save(event);

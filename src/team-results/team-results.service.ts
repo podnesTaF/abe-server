@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Race } from 'src/race/entities/race.entity';
-import { RunnerResultsService } from 'src/runner-results/runner-results.service';
-import { Team } from 'src/teams/entities/team.entity';
-import { Repository } from 'typeorm';
-import { CreateTeamResultDto } from './dto/create-team-result.dto';
-import { TeamResult } from './entities/team-results.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Race } from "src/race/entities/race.entity";
+import { RunnerResultsService } from "src/runner-results/runner-results.service";
+import { Team } from "src/teams/entities/team.entity";
+import { Repository } from "typeorm";
+import { CreateTeamResultDto } from "./dto/create-team-result.dto";
+import { TeamResult } from "./entities/team-results.entity";
 
 @Injectable()
 export class TeamResultsService {
@@ -25,7 +25,7 @@ export class TeamResultsService {
     });
     const team = await this.teamRepository.findOne({
       where: { id: dto.teamId },
-      relations: ['personalBest'],
+      relations: ["personalBest"],
     });
 
     const teamResult = await this.repository.save({
@@ -63,12 +63,12 @@ export class TeamResultsService {
 
     const data = await this.repository.find({
       relations: [
-        'runnerResults',
-        'race',
-        'race.teams',
-        'race.event',
-        'team',
-        'runnerResults.runner',
+        "runnerResults",
+        "race",
+        "race.teams",
+        "race.event",
+        "team",
+        "runnerResults.runner",
       ],
       skip: offset,
       take: limit,
@@ -86,45 +86,45 @@ export class TeamResultsService {
     const offset = (page - 1) * limit;
 
     const totalCount = await this.repository
-      .createQueryBuilder('teamResult')
-      .leftJoin('teamResult.team', 'team')
-      .leftJoin('team.club', 'club')
-      .where('club.id = :clubId', { clubId })
+      .createQueryBuilder("teamResult")
+      .leftJoin("teamResult.team", "team")
+      .leftJoin("team.club", "club")
+      .where("club.id = :clubId", { clubId })
       .getCount();
 
     const qb = this.repository
-      .createQueryBuilder('teamResult')
-      .leftJoinAndSelect('teamResult.team', 'team')
-      .leftJoinAndSelect('teamResult.race', 'race')
-      .leftJoin('race.event', 'event')
-      .leftJoin('race.winner', 'winner')
-      .where('team.clubId = :clubId', { clubId });
+      .createQueryBuilder("teamResult")
+      .leftJoinAndSelect("teamResult.team", "team")
+      .leftJoinAndSelect("teamResult.race", "race")
+      .leftJoin("race.event", "event")
+      .leftJoin("race.winner", "winner")
+      .where("team.clubId = :clubId", { clubId });
 
     if (queries.year) {
       const year = +queries.year;
       if (!isNaN(year)) {
-        qb.andWhere('YEAR(event.startDateTime) = :year', { year });
+        qb.andWhere("YEAR(event.startDateTime) = :year", { year });
       }
     }
 
     if (queries.category) {
-      qb.andWhere('event.category = :category', { category: queries.category });
+      qb.andWhere("event.category = :category", { category: queries.category });
     }
 
     qb.offset(offset)
       .limit(limit)
       .select([
-        'teamResult.id',
-        'teamResult.resultInMs',
-        'teamResult.raceId',
-        'teamResult.teamId',
-        'team.id',
-        'team.name',
-        'team.gender',
-        'team.clubId',
-        'winner.id',
-        'race.startTime',
-        'event.title',
+        "teamResult.id",
+        "teamResult.resultInMs",
+        "teamResult.raceId",
+        "teamResult.teamId",
+        "team.id",
+        "team.name",
+        "team.gender",
+        "team.clubId",
+        "winner.id",
+        "race.startTime",
+        "event.title",
       ]);
 
     const res = await qb.getRawMany();
@@ -144,32 +144,32 @@ export class TeamResultsService {
     const offset = (page - 1) * limit;
 
     const totalCount = await this.repository
-      .createQueryBuilder('teamResult')
-      .leftJoin('teamResult.team', 'team')
-      .where('team.id = :teamId', { teamId })
+      .createQueryBuilder("teamResult")
+      .leftJoin("teamResult.team", "team")
+      .where("team.id = :teamId", { teamId })
       .getCount();
 
     const res = await this.repository
-      .createQueryBuilder('teamResult')
-      .leftJoinAndSelect('teamResult.team', 'team')
-      .leftJoinAndSelect('teamResult.race', 'race')
-      .leftJoin('race.event', 'event')
-      .leftJoin('race.winner', 'winner')
-      .where('team.id = :teamId', { teamId })
+      .createQueryBuilder("teamResult")
+      .leftJoinAndSelect("teamResult.team", "team")
+      .leftJoinAndSelect("teamResult.race", "race")
+      .leftJoin("race.event", "event")
+      .leftJoin("race.winner", "winner")
+      .where("team.id = :teamId", { teamId })
       .offset(offset)
       .limit(limit)
       .select([
-        'teamResult.id',
-        'teamResult.resultInMs',
-        'teamResult.raceId',
-        'teamResult.teamId',
-        'team.id',
-        'team.name',
-        'team.gender',
-        'team.clubId',
-        'winner.id',
-        'race.startTime',
-        'event.title',
+        "teamResult.id",
+        "teamResult.resultInMs",
+        "teamResult.raceId",
+        "teamResult.teamId",
+        "team.id",
+        "team.name",
+        "team.gender",
+        "team.clubId",
+        "winner.id",
+        "race.startTime",
+        "event.title",
       ])
       .getRawMany();
 
@@ -187,7 +187,7 @@ export class TeamResultsService {
   ) {
     const teamResult = await this.repository.findOne({
       where: { id },
-      relations: ['team', 'race'],
+      relations: ["team", "race"],
     });
 
     if (newTime) {
@@ -201,7 +201,7 @@ export class TeamResultsService {
 
       const race = await this.raceRepository.findOne({
         where: { id: teamResult.race.id },
-        relations: ['teams', 'winner'],
+        relations: ["teams", "winner"],
       });
 
       race.teams = race.teams.filter((t) => t.id !== oldTeamId);
@@ -239,7 +239,7 @@ export class TeamResultsService {
   async changeTotalPointByAddedResult(result: TeamResult) {
     const team = await this.teamRepository.findOne({
       where: { id: result.team.id },
-      relations: ['results'],
+      relations: ["results"],
     });
 
     const resLength = team.results.length;

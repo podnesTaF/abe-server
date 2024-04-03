@@ -34,6 +34,11 @@ export class UserController {
     return this.userService.completeVerification(dto);
   }
 
+  @Get("/migration")
+  migrate() {
+    return this.userService.migrate();
+  }
+
   @Get()
   getAllUsers() {
     return this.userService.findAll();
