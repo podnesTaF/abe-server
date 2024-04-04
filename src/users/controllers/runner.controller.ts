@@ -45,6 +45,7 @@ export class RunnerController {
     return this.runnerService.getRunnerPreviews(queries);
   }
 
+
   @Get("/manager/:id")
   getRunnersByManager(@Param("id") id: string) {
     return this.runnerService.getRunnersByManager(+id);

@@ -4,6 +4,7 @@ import { ClubService } from "src/club/club.service";
 import { CountryService } from "src/country/country.service";
 import { Event } from "src/events/entities/event.entity";
 import { PlayersService } from "src/players/players.service";
+import { PrizeCategory } from "src/prizes/entities/prize-category";
 import { Coach } from "src/users/entities/coach.entity";
 import { User } from "src/users/entities/user.entity";
 import { RunnerService } from "src/users/services/runner.service";
@@ -249,17 +250,18 @@ export class TeamsService {
         "events.teams",
         "events.location",
         "events.location.country",
-        "events.prizes",
+        "events.prizeCategories.prizes",
         "coach",
       ],
       order: { id: "ASC" },
     });
     const removeUnnecessary = (event: Event) => {
-      const totalPrize = event.prizes.reduce(
-        (acc, curr) => acc + curr.amount,
+      const totalPrize = event.prizeCategories.reduce(
+        (accCat: number, currCat: PrizeCategory) =>
+          currCat.prizes.reduce((acc, curr) => acc + curr.amount, 0) + accCat,
         0,
       );
-      delete event.prizes;
+      delete event.prizeCategories;
       delete event.teams;
 
       return {

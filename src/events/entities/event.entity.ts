@@ -2,7 +2,7 @@ import { Content } from "src/content/entities/content.entity";
 import { Hashtag } from "src/hashtag/entities/hashtag.entity";
 import { Location } from "src/locations/entities/locations.entity";
 import { Media } from "src/media/entities/media.entity";
-import { PrizeEntity } from "src/prizes/entities/prize.entity";
+import { PrizeCategory } from "src/prizes/entities/prize-category";
 import { Race } from "src/race/entities/race.entity";
 import { TeamRegistration } from "src/team-registration/entities/team-registration.entity";
 import { Team } from "src/teams/entities/team.entity";
@@ -63,11 +63,11 @@ export class Event {
   @JoinColumn()
   location: Location;
 
-  @OneToMany(() => PrizeEntity, (prize) => prize.event, {
+  @OneToMany(() => PrizeCategory, (cat) => cat.event, {
     onDelete: "CASCADE",
     nullable: true,
   })
-  prizes: PrizeEntity[];
+  prizeCategories: PrizeCategory[];
 
   @OneToMany(
     () => ViewerRegistration,

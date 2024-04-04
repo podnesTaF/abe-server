@@ -16,6 +16,7 @@ import { Media } from "src/media/entities/media.entity";
 import { MediaService } from "src/media/media.service";
 import { PlayerEntity } from "src/players/entities/player.entity";
 import { PlayersService } from "src/players/players.service";
+import { PrizeCategory } from "src/prizes/entities/prize-category";
 import { PrizeEntity } from "src/prizes/entities/prize.entity";
 import { PrizesService } from "src/prizes/prizes.service";
 import { Coach } from "src/users/entities/coach.entity";
@@ -40,6 +41,7 @@ import { TeamsService } from "./teams.service";
       Event,
       Country,
       PrizeEntity,
+      PrizeCategory,
       Best,
       Media,
       Club,

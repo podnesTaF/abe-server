@@ -1,16 +1,13 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsNumber, IsOptional } from "class-validator";
 
 export class CreatePrizeDto {
   @IsNumber()
   amount: number;
 
   @IsNumber()
-  place: number;
-
-  @IsOptional()
-  category?: string;
+  place: string;
 
   @IsNumber()
   @IsOptional()
-  eventId?: number;
+  categoryId?: number;
 }

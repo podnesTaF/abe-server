@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { Event } from "./event.entity";
 
 @Entity()
 export class FutureEvent {
@@ -33,6 +34,9 @@ export class FutureEvent {
 
   @Column({ default: false })
   announced: boolean;
+
+  @ManyToOne(() => Event, { nullable: true })
+  event: Event;
 
   @OneToMany(() => Content, (content) => content.futureEvent)
   contents: Content[];

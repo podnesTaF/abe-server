@@ -48,12 +48,14 @@ export class EventsService {
       country,
     );
 
-    const prizes = [];
+    const prizeCategories = [];
 
-    for (let i = 0; i < eventDto.prizes?.length; i++) {
-      const prize = eventDto.prizes[i];
-      const createdPrize = await this.prizeService.create(prize);
-      prizes.push(createdPrize);
+    for (let i = 0; i < eventDto.prizeCategories?.length; i++) {
+      const category = eventDto.prizeCategories[i];
+      const createdPrize = await this.prizeService.createPrizesCategory(
+        category,
+      );
+      prizeCategories.push(createdPrize);
     }
 
     const {
@@ -63,6 +65,7 @@ export class EventsService {
       endDate,
       introImage,
       minorImage,
+      eventCode,
     } = eventDto;
 
     const contents = [];
@@ -76,12 +79,13 @@ export class EventsService {
     return this.repository.save({
       title,
       description,
+      eventCode,
       startDateTime: new Date(startDateTime),
       endDate: new Date(endDate),
       introImage: introImage || null,
       minorImage: minorImage || null,
       location,
-      prizes,
+      prizeCategories,
       contents,
     });
   }
@@ -98,7 +102,8 @@ export class EventsService {
       .leftJoinAndSelect("location.country", "country")
       .leftJoin("event.teams", "team")
       .loadRelationCountAndMap("event.teamsCount", "event.teams")
-      .leftJoinAndSelect("event.prizes", "prize")
+      .leftJoinAndSelect("event.prizeCategories", "prizeCategories")
+      .leftJoinAndSelect("prizeCategories.prizes", "prizes")
       .orderBy("event.id", "DESC");
 
     if (query.month) {
@@ -140,18 +145,18 @@ export class EventsService {
 
     const events = await qb.getMany();
 
-    const resEvents = events.map((ev) => {
-      const totalPrize = ev.prizes.reduce((acc, curr) => acc + curr.amount, 0);
+    // const resEvents = events.map((ev) => {
+    //   const totalPrize = ev.prizes.reduce((acc, curr) => acc + curr.amount, 0);
 
-      delete ev.prizes;
+    //   delete ev.prizes;
 
-      return {
-        ...ev,
-        totalPrize,
-      };
-    });
+    //   return {
+    //     ...ev,
+    //     totalPrize,
+    //   };
+    // });
 
-    return { events: resEvents, totalPages };
+    return { events, totalPages };
   }
 
   async getAllInShort() {
@@ -185,7 +190,7 @@ export class EventsService {
         "minorImage",
         "location",
         "location.country",
-        "prizes",
+        "prizeCategories.prizes",
         "contents",
         "viewerRegistrations",
         "teamRegistrations",
@@ -257,14 +262,16 @@ export class EventsService {
     const event = await this.repository.findOne({
       where: cond,
       relations: [
-        "location",
+        "location.placeImage",
         "location.country",
+        "contents",
+        "contents.media",
         "teams",
         "teams.country",
         "teams.club",
         "teams.logo",
         "teams.coach",
-        "prizes",
+        "prizeCategories.prizes",
         "teams.players",
         "introImage",
         "minorImage",
@@ -511,14 +518,12 @@ export class EventsService {
   }
 
   async updatePrizes(id: number, body: UpdateEventPrizes) {
-    const event = await this.repository.findOne({
-      where: { id },
-      relations: ["prizes"],
-    });
-
-    event.prizes = body.prizes;
-
-    return this.repository.save(event);
+    // const event = await this.repository.findOne({
+    //   where: { id },
+    //   relations: ["prizes"],
+    // });
+    // event.prizeCategories = body.prizes;
+    // return this.repository.save(event);
   }
 
   async updateMedia(id: number, body: UpdateEventMedia) {

@@ -1,5 +1,5 @@
-import { Event } from 'src/events/entities/event.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { PrizeCategory } from "./prize-category";
 
 @Entity()
 export class PrizeEntity {
@@ -7,14 +7,13 @@ export class PrizeEntity {
   id: number;
 
   @Column()
-  place: number;
+  place: string;
 
   @Column()
   amount: number;
 
-  @Column({ default: 'male' })
-  category: string;
-
-  @ManyToOne(() => Event, (event) => event.prizes, { onDelete: 'CASCADE' })
-  event: Event;
+  @ManyToOne(() => PrizeCategory, (category) => category.prizes, {
+    onDelete: "CASCADE",
+  })
+  category: PrizeCategory;
 }

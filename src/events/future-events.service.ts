@@ -20,7 +20,7 @@ export class FutureEventsService {
     if (queries.announced) {
       return {
         futureEvents: await this.repository.find({
-          relations: ["introImage", "contents"],
+          relations: ["introImage", "contents", "event"],
           where: { announced: true },
           order: { id: "DESC" },
         }),

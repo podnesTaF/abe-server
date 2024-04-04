@@ -9,6 +9,7 @@ import { Location } from "src/locations/entities/locations.entity";
 import { LocationsService } from "src/locations/locations.service";
 import { Media } from "src/media/entities/media.entity";
 import { MediaService } from "src/media/media.service";
+import { PrizeCategory } from "src/prizes/entities/prize-category";
 import { PrizeEntity } from "src/prizes/entities/prize.entity";
 import { PrizesService } from "src/prizes/prizes.service";
 import { User } from "src/users/entities/user.entity";
@@ -25,6 +26,7 @@ import { EventsService } from "./events.service";
       Country,
       Media,
       Content,
+      PrizeCategory,
       User,
     ]),
   ],

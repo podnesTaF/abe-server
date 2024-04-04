@@ -1,11 +1,15 @@
 import { IsArray, IsObject, IsOptional, IsString } from "class-validator";
 import { CreateContentDto } from "src/content/dto/create-content.dto";
+import { CreateLocationDto } from "src/locations/dto/create-location.dto";
 import { Media } from "src/media/entities/media.entity";
-import { CreatePrizeDto } from "src/prizes/dto/create-prize.dto";
+import { CreatePrizeCategoryDto } from "src/prizes/dto/create-prize-category.dto";
 
 export class CreateEventDto {
   @IsString()
   title: string;
+
+  @IsString()
+  eventCode: string;
 
   @IsString()
   description: string;
@@ -24,16 +28,11 @@ export class CreateEventDto {
   attendanceType: "free" | "paid";
 
   @IsObject()
-  location: {
-    country: string;
-    city: string;
-    zipCode: string;
-    address: string;
-  };
+  location: CreateLocationDto;
 
   @IsArray()
   @IsOptional()
-  prizes: CreatePrizeDto[];
+  prizeCategories: CreatePrizeCategoryDto[];
 
   @IsString()
   @IsOptional()
