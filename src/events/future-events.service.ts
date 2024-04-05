@@ -27,7 +27,7 @@ export class FutureEventsService {
       };
     }
     const futureEvents = await this.repository.find({
-      relations: ["introImage", "contents"],
+      relations: ["introImage", "contents", "event"],
       order: { id: "DESC" },
     });
     const events = await this.eventRepository
