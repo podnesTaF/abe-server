@@ -22,12 +22,14 @@ import { PushToken } from "src/push-token/entities/push-token.entity";
 import { RaceRegistration } from "src/race-registration/entities/race-registration.entity";
 import { Race } from "src/race/entities/race.entity";
 import { ResetUser } from "src/reset-user/entities/reset-user.entity";
+import { Role } from "src/role/entities/role.entity";
 import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
 import { Split } from "src/splits/entities/splits.entity";
 import { TeamRaceRunner } from "src/team-race-runner/entities/team-race-runner.entity";
 import { TeamRegistration } from "src/team-registration/entities/team-registration.entity";
 import { TeamResult } from "src/team-results/entities/team-results.entity";
 import { Team } from "src/teams/entities/team.entity";
+import { UserRole } from "src/user-role/entities/user-role.entity";
 import { Coach } from "src/users/entities/coach.entity";
 import { Manager } from "src/users/entities/manager.entity";
 import { Runner } from "src/users/entities/runner.entity";
@@ -80,6 +82,8 @@ const config: TypeOrmModuleOptions = {
     TeamRaceRunner,
     PushToken,
     PrizeCategory,
+    UserRole,
+    Role,
   ],
   synchronize: true,
 };

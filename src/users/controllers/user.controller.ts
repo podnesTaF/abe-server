@@ -34,14 +34,14 @@ export class UserController {
     return this.userService.completeVerification(dto);
   }
 
-  @Get("/migration")
-  migrate() {
-    return this.userService.migrate();
-  }
-
   @Get()
   getAllUsers() {
     return this.userService.findAll();
+  }
+
+  @Get("/exists/:email")
+  checkEmail(@Param("email") email: string) {
+    return this.userService.isDuplicate(email);
   }
 
   @Get("/me")

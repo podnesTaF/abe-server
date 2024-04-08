@@ -30,12 +30,15 @@ import { PushTokenModule } from "./push-token/push-token.module";
 import { RaceRegistrationModule } from "./race-registration/race-registration.module";
 import { RaceModule } from "./race/race.module";
 import { ResetUserModule } from "./reset-user/reset-user.module";
+import { RoleModule } from "./role/role.module";
 import { RunnerResultsModule } from "./runner-results/runner-results.module";
 import { SplitsModule } from "./splits/splits.module";
+import { StripeModule } from "./stripe/stripe.module";
 import { TeamRaceRunnerModule } from "./team-race-runner/team-race-runner.module";
 import { TeamRegistrationModule } from "./team-registration/team-registration.module";
 import { TeamResultsModule } from "./team-results/team-results.module";
 import { TeamsModule } from "./teams/teams.module";
+import { UserRoleModule } from "./user-role/user-role.module";
 import { CoachModule } from "./users/modules/coach.module";
 import { ManagerModule } from "./users/modules/manager.module";
 import { RunnerModule } from "./users/modules/runner.module";
@@ -88,6 +91,9 @@ import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registr
     RaceRegistrationModule,
     TeamRaceRunnerModule,
     PushTokenModule,
+    RoleModule,
+    UserRoleModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

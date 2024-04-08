@@ -33,18 +33,19 @@ export class RunnerService {
     if (typeof user === "number") {
       const userRequested = await this.usersRepository.findOne({
         where: { id: user },
+        relations: ["roles.role"],
       });
 
       if (!userRequested) {
         throw new ForbiddenException("User not found");
       }
 
-      if (userRequested.role === "runner") {
+      if (userRequested.roles.find((r) => r.role.name === "runner")) {
         throw new ForbiddenException("User is already a runner");
       }
       runner.user = userRequested;
     } else {
-      if (user.role === "runner") {
+      if (user.roles.find((r) => r.role.name === "runner")) {
         throw new ForbiddenException("User is already a runner");
       }
       runner.user = user;
