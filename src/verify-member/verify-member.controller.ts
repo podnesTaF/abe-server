@@ -12,6 +12,27 @@ export class VerifyMemberController {
     return this.verifyMemberService.create(createVerifyMemberDto);
   }
 
+  @Post("/send-verifcation-email")
+  sendVerificationEmail(
+    @Body()
+    dto: {
+      email: string;
+    },
+  ) {
+    return this.verifyMemberService.sendVerificationEmail(dto);
+  }
+
+  @Post("/verify")
+  verifyEmail(
+    @Body()
+    dto: {
+      email: string;
+      otp: string;
+    },
+  ) {
+    return this.verifyMemberService.completeVerification(dto);
+  }
+
   @Get("/check/:token")
   checkToken(@Param("token") token: string) {
     return this.verifyMemberService.checkToken(token);

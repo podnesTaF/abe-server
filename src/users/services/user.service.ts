@@ -1,16 +1,17 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import sgMail from "@sendgrid/mail";
-import axios from "axios";
 import * as bcrypt from "bcrypt";
 import { Content } from "src/content/entities/content.entity";
 import { CountryService } from "src/country/country.service";
 import { Country } from "src/country/entity/country.entity";
-import { getVerificationLetterTemplate } from "src/member/utils/getLetterTemplate";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
+import { Role } from "src/role/entities/role.entity";
+import { RoleService } from "src/role/role.service";
+import { StripeService } from "src/stripe/stripe.service";
+import { UserRole } from "src/user-role/entities/user-role.entity";
+import { UserRoleService } from "src/user-role/user-role.service";
 import { VerifyMemberService } from "src/verify-member/verify-member.service";
 import { Repository } from "typeorm";
-import * as uuid from "uuid";
 import { CompleteVerificationDto } from "../dtos/complete-verification.dto";
 import { CreateUserDto } from "../dtos/create-user.dto";
 import { LoginUserDto } from "../dtos/login-user.dto";
@@ -28,6 +29,9 @@ export class UserService {
     private contentRepository: Repository<Content>,
     private countryService: CountryService,
     private verifyRepository: VerifyMemberService,
+    private roleService: RoleService,
+    private userRoleService: UserRoleService,
+    private stripeService: StripeService,
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -40,13 +44,11 @@ export class UserService {
     }
     const user = new User();
 
-    user.role = dto.role;
     user.name = dto.name;
     user.surname = dto.surname;
     user.email = dto.email;
     user.image = dto.image;
     user.avatar = dto.avatar;
-    user.phone = dto.countryCode + " " + dto.phone;
     user.city = dto.city;
     let country = await this.countryService.returnIfExist({
       name: dto.country,
@@ -60,74 +62,111 @@ export class UserService {
 
     const newUser = await this.repository.save(user);
 
-    const randomToken = uuid.v4().toString();
-
-    const verification = await this.verifyRepository.create({
-      token: randomToken,
-      user: newUser,
+    const userRoles = await this.createRolesForUser({
+      userId: newUser.id,
+      roleNames: ["user"],
     });
 
-    const msg = {
-      to: newUser.email,
-      from: {
-        email: "it.podnes@gmail.com",
-        name: "Ace Battle Mile",
-      },
-      subject: "Confirm your email address | Ace Battle Mile",
-      html: getVerificationLetterTemplate({
-        name: newUser.name,
-        token: verification.token,
-        ticket: false,
-      }),
+    user.roles = userRoles;
+
+    await this.repository.save(user);
+    let response: {
+      message: string;
+      checkoutUrl?: string;
+    } = {
+      message: "User created successfully.",
     };
 
-    try {
-      await sgMail.send(msg);
-    } catch (error) {
-      console.log("error sending email", error.message);
+    if (dto.roleIds?.length) {
+      const url = await this.stripeService.createCheckoutSession(
+        user.id,
+        dto.roleIds,
+      );
+
+      response.checkoutUrl = url;
+      response.message = "User created. Redirecting to payment...";
+
+      return response;
     }
 
     return this.repository.save(newUser);
   }
 
-  async migrate() {
-    const users = await this.repository.find({
-      relations: ["country", "runner", "spectator", "coach", "image", "avatar"],
+  async isDuplicate(email: string) {
+    const isDuplicate = await this.repository.findOne({
+      where: [{ email: email }],
     });
+    if (isDuplicate) {
+      return true;
+    }
 
-    const promises = users.map(async (user) => {
-      const newUser = this.migrateRunner(user);
-      await axios.post("http://localhost:4000/api/v2/users/migration", newUser);
-    });
-
-    const res = await Promise.all(promises);
-    return "success";
+    return false;
   }
 
-  migrateRunner(user: User) {
-    const roles = ["user"];
-    if (user.role !== "spectator") {
-      roles.push(user.role);
-    }
-    const newUser = {
-      id: user.id,
-      firstName: user.name,
-      lastName: user.surname,
-      dateOfBirth: user.runner?.dateOfBirth || null,
-      countryName: user.country?.name || null,
-      genderName: user.runner?.gender || null,
-      categoryName: user.runner?.category || null,
-      city: user.city || null,
-      email: user.email,
-      phoneNumber: user.phone || null,
-      createdAt: user.createdAt,
-      verified: true,
-      avatarUrl: user.avatar?.mediaUrl || null,
-      imageUrl: user.image?.mediaUrl || null,
-      roles,
-    };
+  async createRolesForUser({
+    userId,
+    roleIds,
+    roleNames,
+  }: {
+    userId: number;
+    roleNames?: string[];
+    roleIds?: number[];
+  }) {
+    let roles: Role[] = [];
 
-    return newUser;
+    // Fetch roles based on provided IDs or names
+    if (roleIds?.length) {
+      roles = await Promise.all(
+        roleIds.map((rId) => this.roleService.findByCond({ id: rId })),
+      );
+    } else if (roleNames?.length) {
+      console.log("works here");
+      roles = await Promise.all(
+        roleNames.map((rName) => this.roleService.findByCond({ name: rName })),
+      );
+
+      console.log("works after");
+    }
+
+    if (!roles.length) {
+      throw new Error("Roles not found");
+    }
+
+    // Process each role
+    const userRoles = await Promise.all(
+      roles.map(async (role) => {
+        if (!role.stripe_product_id) {
+          // Create UserRole without Stripe subscription
+          console.log("works after check");
+          const userRole = await this.userRoleService.createUserRole({
+            userId,
+            roleId: role.id,
+          });
+          return userRole;
+        } else {
+          // Create Stripe subscription and then UserRole
+          const subscription = await this.stripeService.createSubscription(
+            userId,
+            role.id,
+          );
+
+          const userRole = new UserRole();
+          userRole.userId = userId;
+          userRole.roleId = role.id;
+          userRole.stripeSubscriptionId = subscription.id;
+          userRole.subscriptionStatus = subscription.status; // Adjust according to your status handling
+          userRole.startDate = new Date(
+            subscription.current_period_start * 1000,
+          ); // Convert from Unix timestamp
+          userRole.endDate = new Date(subscription.current_period_end * 1000); // Convert from Unix timestamp
+
+          await this.userRoleService.createUserRole(userRole);
+          return userRole;
+        }
+      }),
+    );
+
+    return userRoles;
   }
 
   async completeVerification({
@@ -216,6 +255,8 @@ export class UserService {
         "image",
         "country",
         "runner",
+        "roles",
+        "roles.role",
         "runner.personalBests",
         "runner.results",
         "runner.club",
@@ -255,14 +296,16 @@ export class UserService {
     const query = this.repository
       .createQueryBuilder("user")
       .where({ ...cond })
-      .leftJoinAndSelect("user.image", "image");
+      .leftJoinAndSelect("user.image", "image")
+      .leftJoinAndSelect("user.roles", "roles")
+      .leftJoinAndSelect("roles.role", "role");
 
     const userPreview = await query.getOne();
 
-    if (userPreview.role === "runner") {
+    if (userPreview.roles.find((r) => r.role.name === "runner")) {
       query.leftJoinAndSelect("user.runner", "runner");
       query.leftJoinAndSelect("runner.club", "club");
-    } else if (userPreview.role === "manager") {
+    } else if (userPreview.roles.find((r) => r.role.name === "manager")) {
       query.leftJoinAndSelect("user.manager", "manager");
       query.leftJoinAndSelect("manager.club", "club");
     }
@@ -270,13 +313,8 @@ export class UserService {
     const user = await query.getOne();
 
     if (user) {
-      const club = user[user.role]?.club || null;
-      const clubId = club?.id;
-
-      user[user.role] = null;
-      return { ...user, clubId };
+      return user;
     }
-
     return null;
   }
 

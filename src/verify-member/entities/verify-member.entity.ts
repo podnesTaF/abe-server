@@ -1,6 +1,6 @@
-import { Member } from 'src/member/entities/member.entity';
-import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Member } from "src/member/entities/member.entity";
+import { User } from "src/users/entities/user.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class VerifyMember {
@@ -12,6 +12,9 @@ export class VerifyMember {
 
   @ManyToOne(() => User, { nullable: true })
   user: User;
+
+  @Column({ nullable: true })
+  email: string;
 
   @Column()
   token: string;

@@ -4,6 +4,7 @@ import { Media } from "src/media/entities/media.entity";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
 import { PushToken } from "src/push-token/entities/push-token.entity";
 import { Team } from "src/teams/entities/team.entity";
+import { UserRole } from "src/user-role/entities/user-role.entity";
 import { ViewerRegistration } from "src/viewer-registrations/entities/viewer-registration.entity";
 import {
   Column,
@@ -44,14 +45,17 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ default: "spectator" })
-  role: string;
+  @OneToMany(() => UserRole, (userRole) => userRole.user)
+  roles: UserRole[];
 
   @Column({ nullable: true, type: "text" })
   interest: string;
 
   @Column({ default: false })
   verified: boolean;
+
+  @Column({ nullable: true })
+  customerId: string;
 
   @Column()
   city: string;

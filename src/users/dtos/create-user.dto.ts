@@ -1,11 +1,11 @@
 import {
+  IsArray,
   IsEmail,
   IsObject,
   IsOptional,
   IsString,
   Length,
 } from "class-validator";
-import { UserRole } from "src/auth/roles.enum";
 import { Media } from "src/media/entities/media.entity";
 import { CreateRunnerDto } from "./create-runner.dto";
 import { CreateSpectatorDto } from "./create-spectator.dto";
@@ -19,12 +19,6 @@ export class CreateUserDto {
 
   @IsEmail(undefined, { message: "Wrong email" })
   email: string;
-
-  @IsString()
-  phone: string;
-
-  @IsString()
-  countryCode: string;
 
   @IsObject()
   @IsOptional()
@@ -44,9 +38,8 @@ export class CreateUserDto {
   @IsString()
   country: string;
 
-  @IsString()
-  @IsOptional()
-  role: UserRole;
+  @IsArray()
+  roleIds: number[];
 
   @IsString()
   @IsOptional()
