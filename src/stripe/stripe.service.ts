@@ -11,18 +11,6 @@ import { User } from "src/users/entities/user.entity";
 import Stripe from "stripe";
 import { In, Repository } from "typeorm";
 
-const TEST_PRICE = 100; // $1
-
-const USERS = [
-  {
-    userId: "user_123",
-    customerId: "",
-    email: "test_user@mail.com",
-    firstName: "Test",
-    lastName: "User",
-  },
-];
-
 @Injectable()
 export class StripeService {
   stripe = new Stripe(this.configService.get("STRIPE_SECRET_KEY"), {
@@ -141,9 +129,10 @@ export class StripeService {
       quantity: 1,
     }));
 
-    const urlBase = "http://localhost:3000/register";
-    const cancelUrl = `${urlBase}?userId=${userId}&retryPayment=true`;
-    const successUrl = `${urlBase}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const urlBase =
+      process.env.FRONTEND_URL || "http://localhost:3000/register";
+    const cancelUrl = `${urlBase}?sessionId={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${urlBase}?sessionId={CHECKOUT_SESSION_ID}`;
 
     const session = await this.stripe.checkout.sessions.create({
       customer,
@@ -162,6 +151,29 @@ export class StripeService {
     }
 
     return url;
+  }
+
+  async getUserFromSession(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["customer"],
+    });
+
+    if (!session || !session.customer) {
+      throw new BadRequestException("No session or customer found");
+    }
+
+    const customer = session.customer as Stripe.Customer;
+
+    const user = await this.userRepository.findOne({
+      where: { customerId: customer.id },
+      relations: ["roles.role"],
+    });
+
+    if (!user) {
+      throw new BadRequestException("No user found");
+    }
+
+    return user;
   }
 
   async handleSuccessSubscription(sessionId: string) {
@@ -198,9 +210,24 @@ export class StripeService {
     }
 
     for (const role of roles) {
+      // update role if exist
       if (user.roles.some((userRole) => userRole.role.id === role.id)) {
+        const userRole = user.roles.find(
+          (userRole) => userRole.role.id === role.id,
+        );
+        if (userRole) {
+          userRole.stripeSubscriptionId = subscription.id;
+          userRole.startDate = new Date(
+            subscription.current_period_start * 1000,
+          );
+          userRole.endDate = new Date(subscription.current_period_end * 1000);
+          await this.userRoleRepository.save(userRole);
+        }
+
         continue;
       }
+
+      // create new role
       const userRole = new UserRole();
       userRole.role = role;
       userRole.user = user;
@@ -210,7 +237,37 @@ export class StripeService {
       const newRole = await this.userRoleRepository.save(userRole);
       user.roles.push(newRole);
     }
-    return { user };
+    return { user, status: "success" };
+  }
+
+  async handleCancelPayments(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session || !session.customer) {
+      throw new BadRequestException("No session or customer found");
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { customerId: session.customer as string },
+      relations: ["roles.role"],
+    });
+
+    if (!user) {
+      throw new BadRequestException("No user found");
+    }
+
+    return { user, status: "error" };
+  }
+
+  async handleSessionResult(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+
+    // check if session is paid
+    if (session.payment_status === "paid") {
+      return this.handleSuccessSubscription(sessionId);
+    } else {
+      return this.handleCancelPayments(sessionId);
+    }
   }
 }
 

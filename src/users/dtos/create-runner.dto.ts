@@ -23,6 +23,7 @@ export class CreateRunnerDto {
   worldAthleticsUrl: string;
 
   @IsString()
+  @IsOptional()
   managerOption: string;
 
   @IsNumber()
@@ -30,9 +31,11 @@ export class CreateRunnerDto {
   manager?: number;
 
   @IsBoolean()
+  @IsOptional()
   runnerAgreement: boolean;
 
   @IsBoolean()
+  @IsOptional()
   informationIsCorrect: boolean;
 
   @IsArray()

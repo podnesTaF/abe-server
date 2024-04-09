@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEmail,
   IsObject,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   Length,
 } from "class-validator";
 import { Media } from "src/media/entities/media.entity";
+import { User } from "../entities/user.entity";
 import { CreateRunnerDto } from "./create-runner.dto";
 import { CreateSpectatorDto } from "./create-spectator.dto";
 
@@ -19,6 +21,21 @@ export class CreateUserDto {
 
   @IsEmail(undefined, { message: "Wrong email" })
   email: string;
+
+  @IsString()
+  password: string;
+
+  @IsBoolean()
+  emailConfirmed: boolean;
+
+  @IsString()
+  city: string;
+
+  @IsString()
+  country: string;
+
+  @IsArray()
+  roleIds: number[];
 
   @IsObject()
   @IsOptional()
@@ -33,15 +50,6 @@ export class CreateUserDto {
   ageRange: string;
 
   @IsString()
-  city: string;
-
-  @IsString()
-  country: string;
-
-  @IsArray()
-  roleIds: number[];
-
-  @IsString()
   @IsOptional()
   interest: string;
 
@@ -52,4 +60,9 @@ export class CreateUserDto {
   @IsObject()
   @IsOptional()
   spectator: CreateSpectatorDto;
+}
+
+export class RetryDto {
+  @IsObject()
+  user: User;
 }

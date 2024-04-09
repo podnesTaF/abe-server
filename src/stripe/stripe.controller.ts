@@ -37,9 +37,14 @@ export class StripeController {
     return this.stripeService.createSubscription(userId, roleId);
   }
 
-  @Post("/subscription/success")
-  handlePaymentSuccess(@Body() body: { sessionId: string }) {
-    return this.stripeService.handleSuccessSubscription(body.sessionId);
+  @Post("/subscription/session")
+  async retrySubscription(@Body() body: { userId: number; roleIds: number[] }) {
+    return this.stripeService.createCheckoutSession(body.userId, body.roleIds);
+  }
+
+  @Post("/subscription/session-result")
+  handleSessionResult(@Body() body: { sessionId: string }) {
+    return this.stripeService.handleSessionResult(body.sessionId);
   }
 }
 
