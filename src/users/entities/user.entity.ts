@@ -109,6 +109,7 @@ export class User {
   @OneToOne(() => Runner, (runner) => runner.user, {
     nullable: true,
     onDelete: "CASCADE",
+    onUpdate: "CASCADE",
   })
   runner: Runner;
 

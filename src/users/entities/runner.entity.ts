@@ -86,7 +86,7 @@ export class Runner {
   @Column({ default: 9999, nullable: true })
   rank: number;
 
-  @OneToOne(() => User, (user) => user.runner, { eager: true })
+  @OneToOne(() => User, (user) => user.runner, { onDelete: "CASCADE" })
   @JoinColumn()
   user: User;
 
