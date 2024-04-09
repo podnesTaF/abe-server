@@ -130,7 +130,7 @@ export class StripeService {
     }));
 
     const urlBase =
-      process.env.FRONTEND_URL || "http://localhost:3000/register";
+      (process.env.FRONTEND_URL || "http://localhost:3000") + "/register";
     const cancelUrl = `${urlBase}?sessionId={CHECKOUT_SESSION_ID}`;
     const successUrl = `${urlBase}?sessionId={CHECKOUT_SESSION_ID}`;
 
