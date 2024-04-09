@@ -17,9 +17,11 @@ import { VerifyMember } from "src/verify-member/entities/verify-member.entity";
 import { VerifyMemberService } from "src/verify-member/verify-member.service";
 import { UserController } from "../controllers/user.controller";
 import { Manager } from "../entities/manager.entity";
+import { Runner } from "../entities/runner.entity";
 import { Spectator } from "../entities/spectator.entity";
 import { User } from "../entities/user.entity";
 import { ManagerService } from "../services/manager.service";
+import { RunnerService } from "../services/runner.service";
 import { SpectatorService } from "../services/spectator.service";
 import { UserService } from "../services/user.service";
 
@@ -37,6 +39,7 @@ import { UserService } from "../services/user.service";
       Best,
       Role,
       UserRole,
+      Runner,
     ]),
   ],
   controllers: [UserController],
@@ -51,6 +54,7 @@ import { UserService } from "../services/user.service";
     UserRoleService,
     StripeService,
     ConfigService,
+    RunnerService,
   ],
   exports: [UserService],
 })

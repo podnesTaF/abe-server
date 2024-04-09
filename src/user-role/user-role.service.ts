@@ -20,7 +20,13 @@ export class UserRoleService {
     const userRole = this.userRoleRepository.create(body);
 
     try {
-      return await this.userRoleRepository.save(userRole);
+      const ur = await this.userRoleRepository.save(userRole);
+      const populatedUserRole = await this.userRoleRepository.findOne({
+        where: { id: ur.id },
+        relations: ["role"],
+      });
+
+      return populatedUserRole;
     } catch (error) {
       if (
         error.code === "ER_DUP_ENTRY" ||

@@ -42,6 +42,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ default: true })
+  emailConfirmed: boolean;
+
   @Column({ nullable: true })
   phone: string;
 

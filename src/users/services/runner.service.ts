@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { format, parse } from "date-fns";
 import { Best } from "src/bests/entities/best.entity";
 import { RunnerResult } from "src/runner-results/entities/runner-results.entity";
 import { Repository } from "typeorm";
@@ -22,12 +23,6 @@ export class RunnerService {
   ) {}
 
   async create(dto: CreateRunnerDto, user: User | number) {
-    if (!dto.runnerAgreement || !dto.informationIsCorrect) {
-      throw new ForbiddenException(
-        "You must agree to the terms and conditions",
-      );
-    }
-
     const runner = new Runner();
 
     if (typeof user === "number") {
@@ -45,16 +40,17 @@ export class RunnerService {
       }
       runner.user = userRequested;
     } else {
-      if (user.roles.find((r) => r.role.name === "runner")) {
-        throw new ForbiddenException("User is already a runner");
-      }
       runner.user = user;
     }
 
     runner.selfDefinedPB = [];
     runner.selfDefinedSB = [];
     runner.gender = dto.gender;
-    runner.dateOfBirth = dto.dateOfBirth;
+
+    const parsedDate = parse(dto.dateOfBirth, "dd/MM/yyyy", new Date());
+    const formattedDate = format(parsedDate, "yyyy-MM-dd");
+
+    runner.dateOfBirth = formattedDate;
     for (let i = 0; i < dto.personalBests.length; i++) {
       const best = await this.bestsRepository.save({
         distanceInCm: +dto.personalBests[i].distanceInCm,
@@ -77,22 +73,19 @@ export class RunnerService {
       runner.worldAthleticsUrl = dto.worldAthleticsUrl;
     }
 
-    runner.managerOption = dto.managerOption;
-    if (dto.managerOption === "choose-manager") {
-      const manager = await this.managersRepository.findOne({
-        where: { id: dto.manager },
-      });
-      if (manager) {
-        runner.manager = manager;
-      }
-    } else {
-      runner.manager = null;
-    }
+    // runner.managerOption = dto.managerOption;
+    // if (dto.managerOption === "choose-manager") {
+    //   const manager = await this.managersRepository.findOne({
+    //     where: { id: dto.manager },
+    //   });
+    //   if (manager) {
+    //     runner.manager = manager;
+    //   }
+    // } else {
+    //   runner.manager = null;
+    // }
 
     await this.repository.save(runner);
-    await this.usersRepository.update(runner.user.id, {
-      rolePending: "runner",
-    });
 
     return { success: true };
   }

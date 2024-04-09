@@ -12,18 +12,50 @@ import {
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/roles/roles.guard";
+import { StripeService } from "src/stripe/stripe.service";
 import { CompleteVerificationDto } from "../dtos/complete-verification.dto";
-import { CreateUserDto } from "../dtos/create-user.dto";
+import { CreateUserDto, RetryDto } from "../dtos/create-user.dto";
 import { UpdateUserDto } from "../dtos/update-user.dto";
 import { UserService } from "../services/user.service";
 
 @Controller("users")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly stripeService: StripeService,
+  ) {}
 
   @Post("/register")
-  register(@Body() body: CreateUserDto) {
-    return this.userService.create(body);
+  async register(@Body() body: CreateUserDto | RetryDto) {
+    const user = await this.userService.create(body as CreateUserDto);
+    let response: {
+      message: string;
+      checkoutUrl?: string;
+    } = {
+      message: "User created successfully.",
+    };
+
+    const pendingRolesIds = user.roles
+      .filter((r) => r.role?.stripe_price_id)
+      .map((r) => r.role.id);
+
+    if (pendingRolesIds.length > 0) {
+      const url = await this.stripeService.createCheckoutSession(
+        user.id,
+        pendingRolesIds,
+      );
+
+      response.checkoutUrl = url;
+      response.message = "User created. Redirecting to payment...";
+
+      return response;
+    }
+  }
+
+  @Post("/cancel-registration")
+  async cancelRegistration(@Body() body: { sessionId: string }) {
+    const user = await this.stripeService.getUserFromSession(body.sessionId);
+    return this.userService.cancelRegistration(user);
   }
 
   @Post("/verify")

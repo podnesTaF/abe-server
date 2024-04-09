@@ -7,8 +7,6 @@ import { Country } from "src/country/entity/country.entity";
 import { NotificationEntity } from "src/notification/entities/notification.entity";
 import { Role } from "src/role/entities/role.entity";
 import { RoleService } from "src/role/role.service";
-import { StripeService } from "src/stripe/stripe.service";
-import { UserRole } from "src/user-role/entities/user-role.entity";
 import { UserRoleService } from "src/user-role/user-role.service";
 import { VerifyMemberService } from "src/verify-member/verify-member.service";
 import { Repository } from "typeorm";
@@ -17,6 +15,7 @@ import { CreateUserDto } from "../dtos/create-user.dto";
 import { LoginUserDto } from "../dtos/login-user.dto";
 import { UpdateUserDto } from "../dtos/update-user.dto";
 import { User } from "../entities/user.entity";
+import { RunnerService } from "./runner.service";
 
 @Injectable()
 export class UserService {
@@ -31,7 +30,7 @@ export class UserService {
     private verifyRepository: VerifyMemberService,
     private roleService: RoleService,
     private userRoleService: UserRoleService,
-    private stripeService: StripeService,
+    private runnerService: RunnerService,
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -50,6 +49,8 @@ export class UserService {
     user.image = dto.image;
     user.avatar = dto.avatar;
     user.city = dto.city;
+    user.password = await bcrypt.hash(dto.password, 10);
+
     let country = await this.countryService.returnIfExist({
       name: dto.country,
     });
@@ -65,29 +66,19 @@ export class UserService {
     const userRoles = await this.createRolesForUser({
       userId: newUser.id,
       roleNames: ["user"],
+      roleIds: dto.roleIds,
     });
 
-    user.roles = userRoles;
-
-    await this.repository.save(user);
-    let response: {
-      message: string;
-      checkoutUrl?: string;
-    } = {
-      message: "User created successfully.",
-    };
-
-    if (dto.roleIds?.length) {
-      const url = await this.stripeService.createCheckoutSession(
-        user.id,
-        dto.roleIds,
-      );
-
-      response.checkoutUrl = url;
-      response.message = "User created. Redirecting to payment...";
-
-      return response;
+    // create runner entity
+    if (userRoles.some((r) => r.role.name === "runner")) {
+      const { success } = await this.runnerService.create(dto.runner, newUser);
+      if (!success) {
+        await this.repository.delete(newUser.id);
+        throw new Error("Error creating runner entity");
+      }
     }
+
+    newUser.roles = userRoles;
 
     return this.repository.save(newUser);
   }
@@ -120,12 +111,9 @@ export class UserService {
         roleIds.map((rId) => this.roleService.findByCond({ id: rId })),
       );
     } else if (roleNames?.length) {
-      console.log("works here");
       roles = await Promise.all(
         roleNames.map((rName) => this.roleService.findByCond({ name: rName })),
       );
-
-      console.log("works after");
     }
 
     if (!roles.length) {
@@ -135,34 +123,11 @@ export class UserService {
     // Process each role
     const userRoles = await Promise.all(
       roles.map(async (role) => {
-        if (!role.stripe_product_id) {
-          // Create UserRole without Stripe subscription
-          console.log("works after check");
-          const userRole = await this.userRoleService.createUserRole({
-            userId,
-            roleId: role.id,
-          });
-          return userRole;
-        } else {
-          // Create Stripe subscription and then UserRole
-          const subscription = await this.stripeService.createSubscription(
-            userId,
-            role.id,
-          );
-
-          const userRole = new UserRole();
-          userRole.userId = userId;
-          userRole.roleId = role.id;
-          userRole.stripeSubscriptionId = subscription.id;
-          userRole.subscriptionStatus = subscription.status; // Adjust according to your status handling
-          userRole.startDate = new Date(
-            subscription.current_period_start * 1000,
-          ); // Convert from Unix timestamp
-          userRole.endDate = new Date(subscription.current_period_end * 1000); // Convert from Unix timestamp
-
-          await this.userRoleService.createUserRole(userRole);
-          return userRole;
-        }
+        const userRole = await this.userRoleService.createUserRole({
+          userId,
+          roleId: role.id,
+        });
+        return userRole;
       }),
     );
 
@@ -194,6 +159,10 @@ export class UserService {
       console.log(error.message);
       throw new Error(error.message);
     }
+  }
+
+  async cancelRegistration(user: User) {
+    await this.repository.delete(user.id);
   }
 
   async sendGreetingNotification(user: User) {
