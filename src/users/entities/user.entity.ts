@@ -108,11 +108,13 @@ export class User {
 
   @OneToOne(() => Runner, (runner) => runner.user, {
     nullable: true,
+    onDelete: "CASCADE",
   })
   runner: Runner;
 
   @OneToOne(() => Coach, (coach) => coach.user, {
     nullable: true,
+    onDelete: "CASCADE",
   })
   coach: Coach;
 
