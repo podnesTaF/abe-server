@@ -1,0 +1,57 @@
+import { Event } from "src/modules/events/entities/event.entity";
+import { FutureEvent } from "src/modules/events/entities/future-event.entity";
+import { Media } from "src/modules/media/entities/media.entity";
+import { News } from "src/modules/news/entities/news.entity";
+import { NotificationEntity } from "src/modules/notification/entities/notification.entity";
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+
+@Entity()
+export class Content {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  type: string;
+
+  @Column({ default: "news" })
+  purpose: string;
+
+  @Column({ type: "text", nullable: true })
+  text: string;
+
+  @ManyToOne(() => Media, { nullable: true })
+  media: Media;
+
+  @ManyToOne(() => News, (news) => news.contents, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  news: News;
+
+  @ManyToOne(() => Event, (event) => event.contents, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  event: Event;
+
+  @ManyToMany(
+    () => NotificationEntity,
+    (notification) => notification.contents,
+    {
+      nullable: true,
+    },
+  )
+  notifications: NotificationEntity[];
+
+  @ManyToOne(() => FutureEvent, (futureEvent) => futureEvent.contents, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  futureEvent: FutureEvent;
+}

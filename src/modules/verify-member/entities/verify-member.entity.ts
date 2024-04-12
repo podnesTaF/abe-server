@@ -1,0 +1,24 @@
+import { Member } from "src/modules/member/entities/member.entity";
+import { User } from "src/modules/users/entities/user.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+
+@Entity()
+export class VerifyMember {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Member, { nullable: true })
+  member: Member;
+
+  @ManyToOne(() => User, { nullable: true })
+  user: User;
+
+  @Column({ nullable: true })
+  email: string;
+
+  @Column()
+  token: string;
+
+  @Column()
+  expires: Date;
+}

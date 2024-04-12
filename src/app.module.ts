@@ -3,54 +3,53 @@ import { ConfigModule } from "@nestjs/config";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { resolve } from "path";
-import { AdminModule } from "./admin/admin.module";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { AuthModule } from "./auth/auth.module";
-import { BestsModule } from "./bests/bests.module";
-import { ClubRequestsModule } from "./club-requests/club-requests.module";
-import { ClubModule } from "./club/club.module";
-import typeOrmConfig from "./config/typeorm.config";
-import { ContentModule } from "./content/content.module";
-import { CountryModule } from "./country/country.module";
-import { EventsModule } from "./events/events.module";
-import { FutureEventsModule } from "./events/future-events.module";
-import { FeedbacksModule } from "./feedbacks/feedbacks.module";
-import { FileModule } from "./file/file.module";
-import { HashtagModule } from "./hashtag/hashtag.module";
-import { IntegrationModule } from "./integration/integration.module";
-import { LocationsModule } from "./locations/locations.module";
-import { MediaModule } from "./media/media.module";
-import { MemberModule } from "./member/member.module";
-import { NewsModule } from "./news/news.module";
-import { NotificationModule } from "./notification/notification.module";
-import { PlayersModule } from "./players/players.module";
-import { PrizesModule } from "./prizes/prizes.module";
-import { PushTokenModule } from "./push-token/push-token.module";
-import { RaceRegistrationModule } from "./race-registration/race-registration.module";
-import { RaceModule } from "./race/race.module";
-import { ResetUserModule } from "./reset-user/reset-user.module";
-import { RoleModule } from "./role/role.module";
-import { RunnerResultsModule } from "./runner-results/runner-results.module";
-import { SplitsModule } from "./splits/splits.module";
-import { StripeModule } from "./stripe/stripe.module";
-import { TeamRaceRunnerModule } from "./team-race-runner/team-race-runner.module";
-import { TeamRegistrationModule } from "./team-registration/team-registration.module";
-import { TeamResultsModule } from "./team-results/team-results.module";
-import { TeamsModule } from "./teams/teams.module";
-import { UserRoleModule } from "./user-role/user-role.module";
-import { CoachModule } from "./users/modules/coach.module";
-import { ManagerModule } from "./users/modules/manager.module";
-import { RunnerModule } from "./users/modules/runner.module";
-import { SpectatorModule } from "./users/modules/spectator.module";
-import { UserModule } from "./users/modules/user.module";
-import { VerifyMemberModule } from "./verify-member/verify-member.module";
-import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registrations.module";
+import config from "./core/config/typeorm.config";
+import { AdminModule } from "./modules/admin/admin.module";
+import { AuthModule } from "./modules/auth/auth.module";
+import { BestsModule } from "./modules/bests/bests.module";
+import { ClubRequestsModule } from "./modules/club-requests/club-requests.module";
+import { ClubModule } from "./modules/club/club.module";
+import { ContentModule } from "./modules/content/content.module";
+import { CountryModule } from "./modules/country/country.module";
+import { EventsModule } from "./modules/events/events.module";
+import { FutureEventsModule } from "./modules/events/future-events.module";
+import { FeedbacksModule } from "./modules/feedbacks/feedbacks.module";
+import { FileModule } from "./modules/file/file.module";
+import { HashtagModule } from "./modules/hashtag/hashtag.module";
+import { IntegrationModule } from "./modules/integration/integration.module";
+import { LocationsModule } from "./modules/locations/locations.module";
+import { MediaModule } from "./modules/media/media.module";
+import { MemberModule } from "./modules/member/member.module";
+import { NewsModule } from "./modules/news/news.module";
+import { NotificationModule } from "./modules/notification/notification.module";
+import { PlayersModule } from "./modules/players/players.module";
+import { PrizesModule } from "./modules/prizes/prizes.module";
+import { PushTokenModule } from "./modules/push-token/push-token.module";
+import { RaceRegistrationModule } from "./modules/race-registration/race-registration.module";
+import { RaceModule } from "./modules/race/race.module";
+import { ResetUserModule } from "./modules/reset-user/reset-user.module";
+import { RoleModule } from "./modules/role/role.module";
+import { RunnerResultsModule } from "./modules/runner-results/runner-results.module";
+import { SplitsModule } from "./modules/splits/splits.module";
+import { StripeModule } from "./modules/stripe/stripe.module";
+import { TeamRaceRunnerModule } from "./modules/team-race-runner/team-race-runner.module";
+import { TeamRegistrationModule } from "./modules/team-registration/team-registration.module";
+import { TeamResultsModule } from "./modules/team-results/team-results.module";
+import { TeamsModule } from "./modules/teams/teams.module";
+import { TimetableModule } from "./modules/timetable/timetable.module";
+import { UserRoleModule } from "./modules/user-role/user-role.module";
+import { CoachModule } from "./modules/users/modules/coach.module";
+import { ManagerModule } from "./modules/users/modules/manager.module";
+import { RunnerModule } from "./modules/users/modules/runner.module";
+import { SpectatorModule } from "./modules/users/modules/spectator.module";
+import { UserModule } from "./modules/users/modules/user.module";
+import { VerifyMemberModule } from "./modules/verify-member/verify-member.module";
+import { ViewerRegistrationsModule } from "./modules/viewer-registrations/viewer-registrations.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot(), // Import the ConfigModule to load environment variables
-    TypeOrmModule.forRoot(typeOrmConfig),
+    TypeOrmModule.forRoot(config),
     ServeStaticModule.forRoot({
       rootPath: resolve(__dirname, "static"),
     }),
@@ -94,8 +93,7 @@ import { ViewerRegistrationsModule } from "./viewer-registrations/viewer-registr
     RoleModule,
     UserRoleModule,
     StripeModule,
+    TimetableModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
