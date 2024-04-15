@@ -1,5 +1,5 @@
-import { UserRole } from "src/modules/user-role/entities/user-role.entity";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { UserRole } from 'src/modules/user-role/entities/user-role.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Role {
@@ -9,7 +9,7 @@ export class Role {
   @Column()
   name: string;
 
-  @Column({ type: "text" })
+  @Column({ type: 'text' })
   description: string;
 
   @Column({ nullable: true })

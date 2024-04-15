@@ -1,15 +1,12 @@
-import { IsArray, IsNumber, IsString } from 'class-validator';
+import { IsDateString, IsString } from 'class-validator';
 
 export class CreateRaceDto {
   @IsString()
-  startTime: string;
+  readonly name: string;
 
   @IsString()
-  name: string;
+  readonly description: string;
 
-  @IsNumber()
-  eventId: number;
-
-  @IsArray()
-  teamIds: number[];
+  @IsDateString()
+  readonly startTime: Date;
 }

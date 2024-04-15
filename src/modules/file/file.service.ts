@@ -1,130 +1,144 @@
-import { Storage } from "@google-cloud/storage";
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import sharp from "sharp";
-import { Event } from "src/modules/events/entities/event.entity";
-import { Media } from "src/modules/media/entities/media.entity";
-import { MediaService } from "src/modules/media/media.service";
-import { ViewerRegistration } from "src/modules/viewer-registrations/entities/viewer-registration.entity";
-import * as uuid from "uuid";
-import { googleCloudStorageConfig } from "./google-cloud-storage.config";
-import { getPDFDocument } from "./utils/get-pdf-puppener";
+import { DownloadResponse, Storage } from '@google-cloud/storage';
+import { Injectable } from '@nestjs/common';
+import { StorageFile } from './types/file';
 
-export enum FileType {
-  IMAGE = "image",
-  AVATAR = "avatar",
-  QRCODE = "qrcode",
-  PDF = "pdf",
+interface FileMetadata {
+  [key: string]: string;
+  contentType: string;
 }
-
-export const bucketBaseUrl =
-  "https://storage.googleapis.com/" + googleCloudStorageConfig.bucketName;
 
 @Injectable()
 export class FileService {
-  constructor(private mediaService: MediaService) {}
+  private storage: Storage;
+  private bucket: string;
 
-  async uploadFileToStorage(
-    type: FileType,
-    buffer: Buffer,
-    fileName: string,
-    storage: Storage,
-  ): Promise<Media> {
-    try {
-      const fileExtension = fileName.split(".").pop();
-      const fileDBName = uuid.v4().toString() + "." + fileExtension;
+  constructor() {
+    this.storage = new Storage({
+      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+      credentials: {
+        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY,
+      },
+    });
 
-      const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
-
-      const fileUpload = bucket.file(`${type}/large/${fileDBName}`);
-      const stream = fileUpload.createWriteStream({
-        resumable: false,
-        gzip: true,
-      });
-
-      stream.on("error", (error) => {
-        throw new Error(`Error uploading file: ${error}`);
-      });
-
-      stream.on("finish", () => {
-        console.log(`File uploaded successfully: ${fileName}`);
-      });
-
-      stream.end(buffer);
-
-      // Create a smaller version of the image for preview
-      const smallFileName = "small_" + fileDBName;
-      const smallFileBuffer = await sharp(buffer).resize(200, 200).toBuffer();
-
-      const smallFileUpload = bucket.file(`${type}/small/${smallFileName}`);
-      const smallStream = smallFileUpload.createWriteStream({
-        resumable: false,
-        gzip: true,
-      });
-
-      smallStream.on("error", (error) => {
-        throw new Error(`Error uploading small file: ${error}`);
-      });
-
-      smallStream.on("finish", () => {
-        console.log(`Small file uploaded successfully: ${smallFileName}`);
-      });
-
-      smallStream.end(smallFileBuffer);
-
-      return this.mediaService.create({
-        title: fileName,
-        mediaUrl: `${bucketBaseUrl}/${type}/large/${fileDBName}`,
-        smallUrl: `${bucketBaseUrl}/${type}/small/${smallFileName}`,
-        mediaType: type,
-      });
-    } catch (e) {
-      console.log(e);
-      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    this.bucket = process.env.STORAGE_MEDIA_BUCKET;
   }
 
-  async generatePDFforViewer(
-    event: Event,
-    viewer: ViewerRegistration,
-    qr: Media,
-    storage: Storage,
-  ): Promise<Media> {
-    const mediaUrl = await getPDFDocument(event, viewer, qr);
-    return this.mediaService.create({
-      title: `${event.title}_${viewer.firstName}_${viewer.lastName}`,
-      mediaUrl,
-      mediaType: FileType.PDF,
+  private setPrefix(prefix: string): string {
+    let escDestination = '';
+    escDestination += prefix.replace(/^\.+/g, '').replace(/^\/+|\/+$/g, '');
+    if (escDestination !== '') escDestination = escDestination + '/';
+    return escDestination;
+  }
+
+  async uploadFileToStorage(
+    mediaName: string,
+    prefix: string,
+    contentType: string,
+    media: Buffer,
+    metadata: FileMetadata,
+    replaceUrl?: string,
+  ): Promise<string> {
+    if (replaceUrl) await this.delete(replaceUrl);
+
+    return new Promise((resolve, reject) => {
+      metadata.contentType = contentType;
+      const path = this.setPrefix(prefix) + mediaName;
+      const file = this.storage.bucket(this.bucket).file(path);
+      const stream = file.createWriteStream({
+        resumable: false,
+        gzip: true,
+        metadata: {
+          metadata,
+          contentType,
+        },
+      });
+
+      stream.on('error', (error) => {
+        console.error('Stream error:', error);
+        reject(error); // Reject the promise on error
+      });
+
+      stream.on('finish', async () => {
+        try {
+          await file.setMetadata({ metadata });
+          resolve(file.publicUrl()); // Resolve the promise with the public URL
+        } catch (error) {
+          console.error('Error setting metadata:', error);
+          reject(error); // Reject the promise if setting metadata fails
+        }
+      });
+
+      stream.end(media);
     });
   }
 
-  async getAllSmallImagesFromStorage(storage: Storage): Promise<string[]> {
-    try {
-      const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
+  async migrateToUrl(
+    path: string | null,
+    new_prefix: string,
+  ): Promise<string> | null {
+    if (!path) return null;
 
-      const [files] = await bucket.getFiles({ prefix: "image/small/" });
+    const file = await this.getWithMetaData(path);
 
-      return files.map((file) => bucketBaseUrl + "/" + file.name);
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    const newPath = path.split('/').pop();
+
+    const metadataObject: FileMetadata = {
+      contentType: file.contentType || '',
+      ...Object.fromEntries(file.metadata.entries()),
+    };
+
+    const mediaUrl = await this.uploadFileToStorage(
+      newPath,
+      new_prefix,
+      file.contentType || '',
+      file.buffer,
+      metadataObject,
+    );
+
+    if (mediaUrl) await this.delete(path);
+
+    return mediaUrl || null;
   }
 
-  async deleteFileFromStorage(
-    imagePath: string,
-    storage: Storage,
-    mediaId: number,
-  ): Promise<boolean> {
-    try {
-      const bucket = storage.bucket(googleCloudStorageConfig.bucketName);
-      const file = bucket.file(imagePath);
+  async delete(path: string) {
+    await this.storage
+      .bucket(this.bucket)
+      .file(path)
+      .delete({ ignoreNotFound: true });
+  }
 
-      await file.delete();
+  async get(path: string): Promise<StorageFile> {
+    const fileResponse: DownloadResponse = await this.storage
+      .bucket(this.bucket)
+      .file(path)
+      .download();
+    const [buffer] = fileResponse;
+    const storageFile = new StorageFile();
+    storageFile.buffer = buffer;
+    storageFile.metadata = new Map<string, string>();
+    return storageFile;
+  }
 
-      await this.mediaService.deleteMedia(mediaId);
+  async getWithMetaData(path: string): Promise<StorageFile> {
+    const [bucketObj] = await this.storage
+      .bucket(this.bucket)
+      .file(path)
+      .getMetadata();
 
-      return true;
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    const { metadata } = bucketObj;
+    const fileResponse: DownloadResponse = await this.storage
+      .bucket(this.bucket)
+      .file(path)
+      .download();
+    const [buffer] = fileResponse;
+
+    const storageFile = new StorageFile();
+    storageFile.buffer = buffer;
+    storageFile.metadata = new Map<string, string>(
+      Object.entries(metadata || {}),
+    );
+    storageFile.contentType = storageFile.metadata.get('contentType');
+    return storageFile;
   }
 }

@@ -1,12 +1,12 @@
-import { Event } from "src/modules/events/entities/event.entity";
+import { Event } from 'src/modules/event/entities/event.entity';
 import {
   Column,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-} from "typeorm";
-import { PrizeEntity } from "./prize.entity";
+} from 'typeorm';
+import { PrizeEntity } from './prize.entity';
 
 @Entity()
 export class PrizeCategory {
@@ -20,7 +20,7 @@ export class PrizeCategory {
   prizes: PrizeEntity[];
 
   @ManyToOne(() => Event, (event) => event.prizeCategories, {
-    onDelete: "CASCADE",
+    onDelete: 'CASCADE',
   })
   event: Event;
 }

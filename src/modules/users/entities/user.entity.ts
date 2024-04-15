@@ -1,31 +1,31 @@
-import { Country } from "src/modules/country/entity/country.entity";
-import { Feedback } from "src/modules/feedbacks/entities/feedback.entity";
-import { Media } from "src/modules/media/entities/media.entity";
-import { NotificationEntity } from "src/modules/notification/entities/notification.entity";
-import { PushToken } from "src/modules/push-token/entities/push-token.entity";
-import { Team } from "src/modules/teams/entities/team.entity";
-import { UserRole } from "src/modules/user-role/entities/user-role.entity";
-import { ViewerRegistration } from "src/modules/viewer-registrations/entities/viewer-registration.entity";
+import { ApiProperty } from '@nestjs/swagger';
+import { BestResult } from 'src/modules/best-results/entities/best-result.entity';
+import { Category } from 'src/modules/category/entities/category.entity';
+import { Country } from 'src/modules/country/entity/country.entity';
+import { EventRaceRegistration } from 'src/modules/event-race-registration/entities/event-race-registration.entity';
+import { Gender } from 'src/modules/gender/entities/gender.entity';
+import { JoinRequest } from 'src/modules/join-request/entities/join-request.entity';
+import { OneTimeToken } from 'src/modules/ott/entities/ott.entity';
+import { PushToken } from 'src/modules/push-token/entities/push-token.entity';
+import { Race } from 'src/modules/race/entities/race.entity';
+import { TeamPlayer } from 'src/modules/team/entities/team-player.entity';
+import { Team } from 'src/modules/team/entities/team.entity';
+import { UserRole } from 'src/modules/user-role/entities/user-role.entity';
+import { VisitorTicket } from 'src/visitor-ticket/entities/visitor-ticket.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from "typeorm";
-import { Coach } from "./coach.entity";
-import { Manager } from "./manager.entity";
-import { Runner } from "./runner.entity";
-import { Spectator } from "./spectator.entity";
+} from 'typeorm';
 
 export enum MemberRole {
-  RUNNER = "runner",
-  SPECTATOR = "spectator",
+  RUNNER = 'runner',
+  SPECTATOR = 'spectator',
 }
 
 @Entity()
@@ -34,118 +34,128 @@ export class User {
   id: number;
 
   @Column()
-  name: string;
+  firstName: string;
 
   @Column()
-  surname: string;
+  lastName: string;
 
   @Column({ unique: true })
   email: string;
 
-  @Column({ default: true })
-  emailConfirmed: boolean;
-
-  @Column({ nullable: true })
-  phone: string;
-
-  @OneToMany(() => UserRole, (userRole) => userRole.user)
-  roles: UserRole[];
-
-  @Column({ nullable: true, type: "text" })
-  interest: string;
-
-  @Column({ default: false })
-  verified: boolean;
-
-  @Column({ nullable: true })
-  customerId: string;
-
-  @Column()
-  city: string;
-
-  @ManyToOne(() => Country, (country) => country.players, {
-    onDelete: "SET NULL",
-    nullable: true,
-  })
-  country: Country;
-
+  @ApiProperty({ minimum: 8, example: 'Password-12' })
   @Column({ nullable: true })
   password: string;
 
   @Column({ nullable: true })
-  rolePending: string;
-
-  @ManyToOne(() => Media, { nullable: true })
-  image: Media;
-
-  @ManyToOne(() => Media, { nullable: true })
-  avatar: Media;
+  oauthProvider: string;
 
   @Column({ nullable: true })
-  ageRange: string;
+  oauthId: string;
 
-  @CreateDateColumn({ type: "timestamp" })
-  createdAt: Date;
+  @Column({ nullable: true })
+  genderId: number;
 
-  @UpdateDateColumn({ type: "timestamp" })
-  updatedAt: Date;
+  @ManyToOne(() => Gender, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'genderId' })
+  gender: Gender;
+
+  @Column({ nullable: true })
+  dateOfBirth: string;
+
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number of the user, nullable',
+  })
+  @Column({ nullable: true })
+  phoneNumber: string;
 
   @Column({ default: false })
-  acceptTerms: boolean;
+  emailVerified: boolean;
 
-  @Column({ default: false })
-  acceptNews: boolean;
+  @OneToMany(() => UserRole, (userRole) => userRole.user)
+  roles: UserRole[];
 
-  @OneToOne(() => Spectator, (spectator) => spectator.user, {
+  @Column({ nullable: true })
+  customerId: string;
+
+  @Column({ nullable: true })
+  countryId: number;
+
+  @ManyToOne(() => Country, (country) => country.users, {
+    onDelete: 'SET NULL',
     nullable: true,
   })
-  spectator: Spectator;
+  @JoinColumn({ name: 'countryId' })
+  country: Country;
 
-  @OneToOne(() => Manager, (manager) => manager.user, {
-    nullable: true,
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  imageUrl: string;
+
+  @Column({ nullable: true })
+  avatarUrl: string;
+
+  @ApiProperty({
+    description: 'Indicates if the user is subscribed to news updates',
   })
-  manager: Manager;
+  @Column({ default: true })
+  notificationsEnabled: boolean;
 
-  @OneToOne(() => Runner, (runner) => runner.user, {
+  @Column({ nullable: true })
+  totalPoints: number;
+
+  @Column({ default: 9999, nullable: true })
+  rank: number;
+
+  @OneToMany(() => BestResult, (bestResult) => bestResult.runner)
+  bestResults: BestResult[];
+
+  @ManyToOne(() => Category, (category) => category.runners, {
     nullable: true,
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
+    onDelete: 'SET NULL',
   })
-  runner: Runner;
-
-  @OneToOne(() => Coach, (coach) => coach.user, {
-    nullable: true,
-    onDelete: "CASCADE",
-  })
-  coach: Coach;
-
-  @OneToMany(() => Feedback, (feedback) => feedback.user)
-  feedbacks: Feedback[];
-
-  @OneToMany(() => NotificationEntity, (notification) => notification.sender)
-  sentNotifications: NotificationEntity[];
-
-  @ManyToMany(
-    () => NotificationEntity,
-    (notification) => notification.receivers,
-  )
-  receivedNotifications: NotificationEntity[];
-
-  @ManyToMany(() => Runner, (runner) => runner.followers)
-  @JoinTable()
-  followingRunners: Runner[];
-
-  @ManyToMany(() => Team, (team) => team.followers)
-  @JoinTable()
-  followingTeams: Team[];
-
-  @OneToMany(
-    () => ViewerRegistration,
-    (viewerRegistration) => viewerRegistration.viewer,
-    { nullable: true },
-  )
-  viewerRegistrations: ViewerRegistration[];
+  @JoinColumn({ name: 'categoryId' })
+  category: Category;
 
   @OneToMany(() => PushToken, (pushToken) => pushToken.user)
   pushTokens: PushToken[];
+
+  @OneToMany(() => Team, (team) => team.coach, { nullable: true })
+  coachTeams: Team[];
+
+  @OneToMany(() => TeamPlayer, (teamPlayer) => teamPlayer.runner, {
+    nullable: true,
+  })
+  runnerTeams: TeamPlayer[];
+
+  @OneToMany(() => JoinRequest, (joinRequest) => joinRequest.runner, {
+    nullable: true,
+  })
+  joinRequests: JoinRequest[];
+
+  @OneToMany(
+    () => EventRaceRegistration,
+    (eventRaceRegistration) => eventRaceRegistration.runner,
+    {
+      nullable: true,
+    },
+  )
+  registrations: EventRaceRegistration[];
+
+  @OneToMany(() => Race, (race) => race.raceRunners, { nullable: true })
+  runnerForRaces: Race[];
+
+  @OneToMany(() => VisitorTicket, (visitorTicket) => visitorTicket.user)
+  visitorTickets: VisitorTicket[];
+
+  @OneToMany(() => OneTimeToken, (ott) => ott.user)
+  ottMappings: OneTimeToken[];
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }

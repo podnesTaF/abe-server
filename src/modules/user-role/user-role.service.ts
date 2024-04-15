@@ -1,11 +1,11 @@
-import { ConflictException, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   CreateUserRoleDto,
   CreateUserRoleSubscription,
-} from "./dto/create-user-role.dto";
-import { UserRole } from "./entities/user-role.entity";
+} from './dto/create-user-role.dto';
+import { UserRole } from './entities/user-role.entity';
 
 @Injectable()
 export class UserRoleService {
@@ -23,14 +23,14 @@ export class UserRoleService {
       const ur = await this.userRoleRepository.save(userRole);
       const populatedUserRole = await this.userRoleRepository.findOne({
         where: { id: ur.id },
-        relations: ["role"],
+        relations: ['role'],
       });
 
       return populatedUserRole;
     } catch (error) {
       if (
-        error.code === "ER_DUP_ENTRY" ||
-        error.message.includes("Duplicate entry")
+        error.code === 'ER_DUP_ENTRY' ||
+        error.message.includes('Duplicate entry')
       ) {
         throw new ConflictException(`The user already has the specified role.`);
       }

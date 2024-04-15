@@ -1,303 +1,125 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
-} from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Event } from "src/modules/events/entities/event.entity";
-import { RaceRegistration } from "src/modules/race-registration/entities/race-registration.entity";
-import { RaceRegistrationService } from "src/modules/race-registration/race-registration.service";
-import { Team } from "src/modules/teams/entities/team.entity";
-import { User } from "src/modules/users/entities/user.entity";
-import { Repository } from "typeorm";
-import { CreateRaceDto } from "./dto/create-race.dto";
-import { Race } from "./entities/race.entity";
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EventRaceType } from 'src/modules/event-race-type/entities/event-race-type.entity';
+import { Repository } from 'typeorm';
+import { CreateRaceDto } from './dto/create-race.dto';
+import { UpdateRaceDto } from './dto/update-race.dto';
+import { Race } from './entities/race.entity';
 
 @Injectable()
 export class RaceService {
   constructor(
     @InjectRepository(Race)
-    private repository: Repository<Race>,
-    @InjectRepository(Team)
-    private teamRepository: Repository<Team>,
-    @InjectRepository(Event)
-    private eventRepository: Repository<Event>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private raceRegistrationService: RaceRegistrationService,
+    private readonly raceRepository: Repository<Race>,
+    @InjectRepository(EventRaceType)
+    private readonly eventRaceTypeRepository: Repository<EventRaceType>,
   ) {}
 
-  async createRace(dto: CreateRaceDto) {
-    const event = await this.eventRepository.findOneOrFail({
-      where: { id: dto.eventId },
-      relations: ["teamRegistrations.team"],
+  async createRace(
+    eventRaceTypeId: number,
+    dto: CreateRaceDto[],
+  ): Promise<Race[]> {
+    const eventRaceType = await this.eventRaceTypeRepository.findOne({
+      where: {
+        id: eventRaceTypeId,
+      },
     });
 
-    let unregisteredTeamForEventIds = dto.teamIds.filter(
-      (tId) => !event.teamRegistrations.some((reg) => reg.team.id === tId),
+    if (!eventRaceType) {
+      throw new NotFoundException('Event race type not found');
+    }
+
+    return this.raceRepository.save(
+      dto.map((r) => ({ ...r, eventRaceTypeId: eventRaceTypeId })),
     );
-    if (unregisteredTeamForEventIds.length > 0) {
-      throw new BadRequestException(
-        `Teams with ids: ${unregisteredTeamForEventIds.reduce(
-          (acc, curr) => acc + curr + ", ",
-          "",
-        )} are not registered for this event`,
-      );
-    }
-
-    if (event.startDateTime < new Date()) {
-      throw new ForbiddenException(
-        "You are not allowed to register for past events",
-      );
-    }
-
-    const race = await this.repository.save({
-      startTime: dto.startTime,
-      event,
-      name: dto.name,
-    });
-
-    const raceRegistrations = [];
-
-    for (const teamId of dto.teamIds) {
-      const raceRegistration = await this.raceRegistrationService.create({
-        teamId: teamId,
-        raceId: race.id,
-      });
-
-      raceRegistrations.push(raceRegistration);
-    }
-
-    race.teamRegistrations = raceRegistrations;
-
-    return this.repository.save(race);
   }
 
-  async getAllRaces(queries: {
-    page: number;
-    limit: number;
-    category?: string;
-    country?: string;
-    year?: string;
-    isFinished?: string;
-    name?: string;
-  }) {
-    const count = await this.repository.count();
-    const page = +queries?.page || 1;
-    const limit = +queries?.limit || 5;
-
-    const qb = this.repository
-      .createQueryBuilder("race")
-      .leftJoinAndSelect("race.event", "event")
-      .leftJoinAndSelect("event.location", "location")
-      .leftJoinAndSelect("location.country", "country")
-      .leftJoinAndSelect("race.winner", "winner")
-      .leftJoinAndSelect("race.teamResults", "teamResults")
-      .leftJoinAndSelect("teamResults.team", "team");
-
-    if (queries.name) {
-      qb.andWhere("event.title LIKE :name", { name: `%${queries.name}%` });
-    }
-
-    if (queries.category) {
-      qb.andWhere("event.category = :category", { category: queries.category });
-    }
-
-    if (queries.country) {
-      qb.andWhere("country.name LIKE :country", {
-        country: `%${queries.country}%`,
-      });
-    }
-
-    if (queries.year) {
-      const year = +queries.year;
-      if (!isNaN(year)) {
-        qb.andWhere("YEAR(event.startDateTime) = :year", { year });
-      }
-    }
-
-    if (queries.isFinished) {
-      qb.andWhere("winner.id IS NOT NULL");
-    }
-
-    qb.skip((page - 1) * limit).take(limit);
-
-    const races = await qb.getMany();
-
-    return {
-      races,
-      totalPages: Math.ceil(count / limit),
-    };
-  }
-
-  async getRace(id: number) {
-    return this.repository.findOne({
+  async getFullRace(id: number): Promise<Race> {
+    return this.raceRepository.findOne({
       where: { id },
       relations: [
-        "event",
-        "winner",
-        "teamResults",
-        "teamResults.team",
-        "teams",
+        'eventRaceType',
+        'eventRaceType.raceType',
+        'eventRaceType.event',
+        'raceRunners',
+        'raceTeams.team',
+        'raceTeams.raceRunners.runnerRole',
+        'raceTeams.raceRunners.splits',
+        'raceTeams.raceRunners.runner.country',
       ],
     });
+  }
+
+  // update
+  async updateRace(raceId: number, dto: UpdateRaceDto) {
+    const race = await this.raceRepository.findOne({ where: { id: raceId } });
+    if (!race) {
+      throw new NotFoundException('Race not Found');
+    }
+
+    race.startTime = dto.startTime ?? race.startTime;
+    race.finished = dto.finished ?? race.finished;
+    race.name = dto.name ?? race.name;
+    race.description = dto.description ?? race.description;
+
+    race.published = this.setRaceStatus(race, dto.published);
+
+    return this.raceRepository.save(race);
+  }
+
+  // publish / unpublish race
+  setRaceStatus(race: Race, published?: boolean): boolean {
+    if (published === undefined) {
+      return race.published;
+    }
+    if (race.finished) {
+      throw new BadRequestException(
+        'You cannot change status to the finished race',
+      );
+    }
+
+    return published;
   }
 
   getLastMatches(query: {
     runnerId?: string;
     teamId?: string;
-    managerId?: string;
+    count?: string;
   }) {
-    const qb = this.repository
-      .createQueryBuilder("race")
-      .leftJoinAndSelect("race.event", "event")
-      .leftJoinAndSelect("event.location", "location")
-      .leftJoinAndSelect("location.country", "country")
-      .leftJoinAndSelect("race.winner", "winner")
-      .leftJoinAndSelect("race.teamResults", "teamResults")
-      .leftJoinAndSelect("teamResults.team", "team");
+    const qb = this.raceRepository
+      .createQueryBuilder('race')
+      .leftJoinAndSelect('race.eventRaceType', 'eventRaceType')
+      .leftJoinAndSelect('eventRaceType.event', 'event')
+      .leftJoinAndSelect('event.location', 'location')
+      .leftJoinAndSelect('location.country', 'country')
+      .leftJoinAndSelect('race.raceTeams', 'raceTeams')
+      .leftJoinAndSelect('raceTeams.team', 'team');
 
     if (query.runnerId) {
-      qb.leftJoinAndSelect("teamResults.runnerResults", "runnerResults")
-        .leftJoinAndSelect("runnerResults.runner", "runner")
-        .where("runner.id = :runnerId", {
-          runnerId: +query.runnerId,
-        });
-    }
-
-    if (query.managerId) {
-      qb.leftJoinAndSelect("team.manager", "manager").where(
-        "manager.id = :managerId",
+      qb.leftJoinAndSelect('raceTeams.raceRunners', 'raceRunners').where(
+        'raceRunners.runnerId = :runnerId',
         {
-          managerId: +query.managerId,
+          runnerId: +query.runnerId,
         },
       );
     }
 
     if (query.teamId) {
-      qb.andWhere("team.id = :teamId", {
+      qb.andWhere('team.id = :teamId', {
         teamId: +query.teamId,
       });
     }
 
-    qb.andWhere("race.startTime < :now", {
+    qb.andWhere('race.startTime < :now', {
       now: new Date(), // Current time
     })
-      .orderBy("race.startTime", "DESC") // Order by startTime in descending order
-      .take(2);
+      .orderBy('race.startTime', 'DESC') // Order by startTime in descending order
+      .take(query.count ? +query.count : 5);
 
     return qb.getMany();
-  }
-
-  async getFullRace(id: number) {
-    return this.repository.findOne({
-      where: { id },
-      relations: [
-        "event",
-        "winner",
-        "teamResults",
-        "teamResults.team",
-        "teams",
-        "teamResults.runnerResults",
-        "teamResults.runnerResults.runner",
-        "teamResults.runnerResults.runner.club",
-        "teamResults.runnerResults.runner.user.country",
-        "teamResults.runnerResults.runner.personalBests",
-        "teamResults.runnerResults.splits",
-      ],
-    });
-  }
-
-  async getAllRacesByEvent(id: number, userId?: number) {
-    const races = await this.repository
-      .createQueryBuilder("race")
-      .leftJoinAndSelect("race.teamRegistrations", "teamRegistrations")
-      .leftJoinAndSelect("teamRegistrations.team", "team")
-      .leftJoinAndSelect("team.logo", "logo")
-      .leftJoinAndSelect("race.event", "event")
-      .where("event.id = :eventId", { eventId: id })
-      .getMany();
-
-    let user: User;
-    if (userId) {
-      user = await this.userRepository.findOneOrFail({
-        where: { id: userId },
-        relations: [
-          "coach.teamRegistrations",
-          "manager.teams.raceRegistrations",
-        ],
-      });
-    }
-
-    if (!userId || (!user.coach && !user.manager)) {
-      return races;
-    }
-
-    return races.map((race) => {
-      let raceRegistrationsToCheckIn: RaceRegistration[] = [];
-      race.teamRegistrations.forEach((reg) => {
-        if (reg.checkedIn) {
-          return;
-        }
-        if (user.coach) {
-          user.coach.teamRegistrations.forEach((teamReg) => {
-            if (teamReg.team.id === reg.team.id) {
-              raceRegistrationsToCheckIn.push(reg);
-            }
-          });
-        } else if (user.manager) {
-          user.manager.teams.forEach((team) => {
-            if (team.id === reg.team.id) {
-              raceRegistrationsToCheckIn.push(reg);
-            }
-          });
-        }
-      });
-
-      return {
-        ...race,
-        availableForCheckIn: raceRegistrationsToCheckIn.length > 0,
-        raceRegistrationsToCheckIn,
-      };
-    });
-  }
-
-  async updateWinner(teamId: number, raceId: number) {
-    const winner = await this.teamRepository.findOne({ where: { id: teamId } });
-
-    return this.repository.update(raceId, { winner });
-  }
-
-  async updateRace(
-    id: number,
-    body: { teamIds: number[]; startTime: string; eventId: number },
-  ) {
-    const race = await this.repository.findOne({
-      where: { id },
-      relations: ["teams", "event"],
-    });
-
-    const teams = await Promise.all(
-      body.teamIds.map(async (id) => {
-        const team = await this.teamRepository.findOne({ where: { id } });
-        if (team) {
-          return team;
-        }
-      }),
-    );
-
-    const event = await this.eventRepository.findOne({
-      where: { id: body.eventId },
-    });
-
-    race.teams = teams || race.teams;
-    race.startTime = body.startTime ? new Date(body.startTime) : race.startTime;
-    race.event = event || race.event;
-
-    return this.repository.save(race);
-  }
-
-  deleteRace(id: number) {
-    return this.repository.delete(id);
   }
 }

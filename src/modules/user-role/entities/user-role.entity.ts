@@ -1,5 +1,5 @@
-import { Role } from "src/modules/role/entities/role.entity";
-import { User } from "src/modules/users/entities/user.entity";
+import { Role } from 'src/modules/role/entities/role.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 import {
   Column,
   Entity,
@@ -7,10 +7,10 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
-} from "typeorm";
+} from 'typeorm';
 
-@Entity("user_role")
-@Unique(["userId", "roleId"])
+@Entity('user_role')
+@Unique(['userId', 'roleId'])
 export class UserRole {
   @PrimaryGeneratedColumn()
   id: number;
@@ -33,11 +33,11 @@ export class UserRole {
   @Column({ nullable: true })
   endDate: Date;
 
-  @ManyToOne(() => User, (user) => user.roles, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "userId" })
+  @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Role, (role) => role.userRoles, { onDelete: "RESTRICT" })
-  @JoinColumn({ name: "roleId" })
+  @ManyToOne(() => Role, (role) => role.userRoles, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'roleId' })
   role: Role;
 }

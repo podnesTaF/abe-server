@@ -1,16 +1,14 @@
-import { Event } from "src/modules/events/entities/event.entity";
-import { RaceRegistration } from "src/modules/race-registration/entities/race-registration.entity";
-import { TeamResult } from "src/modules/team-results/entities/team-results.entity";
-import { Team } from "src/modules/teams/entities/team.entity";
+import { EventRaceType } from 'src/modules/event-race-type/entities/event-race-type.entity';
+import { RaceRunner } from 'src/modules/race-runner/entities/race-runner.entity';
+import { RaceTeam } from 'src/modules/race-team/entities/race-team.entity';
 import {
   Column,
   Entity,
-  JoinTable,
-  ManyToMany,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-} from "typeorm";
+} from 'typeorm';
 
 @Entity()
 export class Race {
@@ -18,39 +16,37 @@ export class Race {
   id: number;
 
   @Column()
-  startTime: Date;
-
-  @Column()
   name: string;
 
-  @Column({ default: "male" })
-  type: string;
+  @Column({ nullable: true })
+  description: string;
 
-  // TO REMOVE
-  @ManyToMany(() => Team, (team) => team.races, {
-    nullable: true,
-  })
-  @JoinTable()
-  teams: Team[];
+  @Column({ type: 'datetime', nullable: true })
+  startTime: Date;
 
-  @OneToMany(
-    () => RaceRegistration,
-    (raceRegistration) => raceRegistration.race,
-    {
-      nullable: true,
-    },
-  )
-  teamRegistrations: RaceRegistration[];
+  @Column({ type: 'datetime', nullable: true })
+  endTime: Date;
 
-  @ManyToOne(() => Team, (team) => team.wonRaces, {
-    nullable: true,
-    onDelete: "CASCADE",
-  })
-  winner: Team;
+  @Column({ default: false })
+  published: boolean;
 
-  @ManyToOne(() => Event, (event) => event.races)
-  event: Event;
+  @Column({ default: false })
+  finished: boolean;
 
-  @OneToMany(() => TeamResult, (teamResult) => teamResult.race)
-  teamResults: TeamResult[];
+  @Column()
+  eventRaceTypeId: number;
+  @ManyToOne(() => EventRaceType, (eventRaceType) => eventRaceType.races)
+  eventRaceType: EventRaceType;
+
+  @OneToMany(() => RaceRunner, (raceRunner) => raceRunner.race)
+  raceRunners: RaceRunner[];
+
+  @OneToMany(() => RaceTeam, (raceTeam) => raceTeam.race)
+  raceTeams: RaceTeam[];
+
+  @Column({ nullable: true })
+  winnerId: number;
+  @ManyToOne(() => RaceTeam, { nullable: true })
+  @JoinColumn({ name: 'winnerId' })
+  winner: RaceTeam;
 }

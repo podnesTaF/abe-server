@@ -1,25 +1,25 @@
-import { Event } from "src/modules/events/entities/event.entity";
+import { Event } from 'src/modules/event/entities/event.entity';
 import {
   Column,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-} from "typeorm";
-import { TimetableRow } from "./timetable-row.entity";
+} from 'typeorm';
+import { TimetableRow } from './timetable-row.entity';
 
 @Entity()
 export class Timetable {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: "datetime" })
+  @Column({ type: 'datetime' })
   startTime: Date;
 
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ type: "datetime", nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   validUntil?: Date;
 
   @Column({ default: true })

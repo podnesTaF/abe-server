@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Event } from "src/modules/events/entities/event.entity";
-import { Repository } from "typeorm";
-import { CreateTimetableDto } from "../dto/create-timetable.dto";
-import { UpdateTimetableDto } from "../dto/update-timetable.dto";
-import { TimetableRow } from "../entities/timetable-row.entity";
-import { Timetable } from "../entities/timetable.entity";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Event } from 'src/modules/event/entities/event.entity';
+import { Repository } from 'typeorm';
+import { CreateTimetableDto } from '../dto/create-timetable.dto';
+import { UpdateTimetableDto } from '../dto/update-timetable.dto';
+import { TimetableRow } from '../entities/timetable-row.entity';
+import { Timetable } from '../entities/timetable.entity';
 
 @Injectable()
 export class TimetableService {
@@ -25,7 +25,7 @@ export class TimetableService {
     });
 
     if (!event) {
-      throw new NotFoundException("Active event by provided id not found");
+      throw new NotFoundException('Active event by provided id not found');
     }
 
     // invalidate previous timetables
@@ -61,7 +61,7 @@ export class TimetableService {
     });
 
     if (!timetable) {
-      throw new NotFoundException("Timetable not found");
+      throw new NotFoundException('Timetable not found');
     }
 
     return await this.timetableRepository.save({

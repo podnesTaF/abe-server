@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import { Repository } from 'typeorm';
+import { CreateCountryDto } from './dto/create-country.dto';
 import { Country } from './entity/country.entity';
 
 @Injectable()
@@ -10,6 +11,14 @@ export class CountryService {
     @InjectRepository(Country)
     private repository: Repository<Country>,
   ) {}
+
+  async createManyCountries(countries: CreateCountryDto[]): Promise<Country[]> {
+    const countriesToSave = countries.map((country) => {
+      return this.repository.create(country);
+    });
+
+    return this.repository.save(countriesToSave);
+  }
 
   async returnIfExist(query: any) {
     const country = await this.repository.findOne({ where: { ...query } });
@@ -37,7 +46,19 @@ export class CountryService {
     });
   }
 
+  async getFullCountries() {
+    return this.repository.find();
+  }
+
   async findById(id: number) {
     return this.repository.findOne({ where: { id } });
+  }
+
+  getAllNames() {
+    return this.repository.find({ select: ['id', 'name'] });
+  }
+
+  async findByName(name: string) {
+    return this.repository.findOne({ where: { name } });
   }
 }

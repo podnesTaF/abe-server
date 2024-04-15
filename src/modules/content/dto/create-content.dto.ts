@@ -1,5 +1,5 @@
-import { IsObject, IsOptional, IsString } from "class-validator";
-import { Media } from "src/modules/media/entities/media.entity";
+import { Transform } from 'class-transformer';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateContentDto {
   @IsString()
@@ -9,11 +9,17 @@ export class CreateContentDto {
   @IsOptional()
   text: string;
 
-  @IsObject()
-  @IsOptional()
-  media: Media;
-
   @IsString()
   @IsOptional()
   purpose: string;
+
+  @Transform(({ value }) => parseInt(value), { toClassOnly: true })
+  @IsNumber()
+  @IsOptional()
+  articleId: number;
+
+  @Transform(({ value }) => parseInt(value), { toClassOnly: true })
+  @IsNumber()
+  @IsOptional()
+  eventId: number;
 }

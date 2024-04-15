@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "src/modules/users/entities/user.entity";
-import { In, Repository } from "typeorm";
-import { PushToken } from "./entities/push-token.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/modules/users/entities/user.entity';
+import { In, Repository } from 'typeorm';
+import { PushToken } from './entities/push-token.entity';
 
 @Injectable()
 export class TokenService {
@@ -23,7 +23,7 @@ export class TokenService {
       user = await this.userRepository.findOne({ where: { id: userId } });
     }
 
-    let existingToken = await this.pushTokenRepository.findOne({
+    const existingToken = await this.pushTokenRepository.findOne({
       where: { token },
     });
 
@@ -44,7 +44,7 @@ export class TokenService {
   findAllReceiversTokens(receiverIds: number[]): Promise<Partial<PushToken>[]> {
     return this.pushTokenRepository.find({
       where: { user: { id: In(receiverIds) } },
-      select: ["token"],
+      select: ['token'],
     });
   }
 

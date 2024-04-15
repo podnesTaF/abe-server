@@ -1,7 +1,5 @@
-import { Location } from "src/modules/locations/entities/locations.entity";
-import { PlayerEntity } from "src/modules/players/entities/player.entity";
-import { Team } from "src/modules/teams/entities/team.entity";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { User } from 'src/modules/users/entities/user.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Country {
@@ -12,17 +10,17 @@ export class Country {
   name: string;
 
   @Column()
-  code: string;
+  phoneCode: string;
 
   @Column({ nullable: true })
-  flagIconUrl: string;
+  shortName: string;
 
-  @OneToMany(() => PlayerEntity, (player) => player.country)
-  players: PlayerEntity[];
+  get flagIconUrl(): string {
+    return this.shortName
+      ? `https://flagcdn.com/${this.shortName.toLowerCase()}.svg`
+      : null;
+  }
 
-  @OneToMany(() => Team, (team) => team.country)
-  teams: Team[];
-
-  @OneToMany(() => Location, (location) => location.country)
-  locations: Location[];
+  @OneToMany(() => User, (user) => user.country)
+  users: User[];
 }

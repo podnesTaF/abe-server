@@ -5,34 +5,39 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   Request,
+  UploadedFiles,
   UseGuards,
-} from "@nestjs/common";
-import { JwtAuthGuard } from "src/modules/auth/guards/jwt-auth.guard";
-import { RolesGuard } from "src/modules/auth/guards/roles.guard";
-import { Roles } from "src/modules/auth/roles/roles.guard";
-import { StripeService } from "src/modules/stripe/stripe.service";
-import { CompleteVerificationDto } from "../dtos/complete-verification.dto";
-import { CreateUserDto, RetryDto } from "../dtos/create-user.dto";
-import { UpdateUserDto } from "../dtos/update-user.dto";
-import { UserService } from "../services/user.service";
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
+import { Roles } from 'src/modules/auth/roles/roles-auth.decorator';
+import { PaymentsService } from 'src/modules/payments/payments.service';
+import { AuthenticatedUser, GetUser } from '../decorators/user.decorator';
+import { CreateUserDto } from '../dtos/create-user.dto';
+import { UpdateUserDto } from '../dtos/update-user.dto';
+import { User } from '../entities/user.entity';
+import { UserService } from '../services/user.service';
 
-@Controller("users")
+@ApiTags('users')
+@Controller('users')
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly stripeService: StripeService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
-  @Post("/register")
-  async register(@Body() body: CreateUserDto | RetryDto) {
+  @Post('/register')
+  async register(@Body() body: CreateUserDto) {
     const user = await this.userService.create(body as CreateUserDto);
-    let response: {
+    const response: {
       message: string;
       checkoutUrl?: string;
     } = {
-      message: "User created successfully.",
+      message: 'User created successfully.',
     };
 
     const pendingRolesIds = user.roles
@@ -40,30 +45,27 @@ export class UserController {
       .map((r) => r.role.id);
 
     if (pendingRolesIds.length > 0) {
-      const url = await this.stripeService.createCheckoutSession(
+      const url = await this.paymentsService.createCheckoutSession(
         user.id,
         pendingRolesIds,
       );
 
       response.checkoutUrl = url;
-      response.message = "User created. Redirecting to payment...";
+      response.message = 'User created. Redirecting to payment...';
 
       return response;
     }
   }
 
-  @Post("/cancel-registration")
+  @Post('/cancel-registration')
   async cancelRegistration(@Body() body: { sessionId: string }) {
-    const user = await this.stripeService.getUserFromSession(body.sessionId);
+    const user = await this.paymentsService.getUserFromSession(body.sessionId);
     return this.userService.cancelRegistration(user);
   }
 
-  @Post("/verify")
-  verifyMember(
-    @Body()
-    dto: CompleteVerificationDto,
-  ) {
-    return this.userService.completeVerification(dto);
+  @Post('/verify')
+  verifyMember(@Body() body: { ott: string }): Promise<User> {
+    return this.userService.completeVerification(body.ott);
   }
 
   @Get()
@@ -71,42 +73,61 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get("/exists/:email")
-  checkEmail(@Param("email") email: string) {
-    return this.userService.isDuplicate(email);
+  @Get('/exists/:email')
+  checkEmail(@Param('email') email: string) {
+    return this.userService.isDuplicateEmail(email);
   }
 
-  @Get("/me")
+  @Post('/email-confirmation')
+  @UseGuards(JwtAuthGuard)
+  sendEmailConfirmation(
+    @Body() body: { token: string },
+    @GetUser() user: AuthenticatedUser,
+  ) {
+    return this.userService.sendEmailConfirmation(user, body.token);
+  }
+
+  @Get('/verify-status')
+  @UseGuards(JwtAuthGuard)
+  getVerifyStatus(@GetUser() user: AuthenticatedUser) {
+    return this.userService.getVerifyStatus(user.id);
+  }
+
+  @Get('/exists/:email')
+  getUserIfExists(@Param('email') email: string) {
+    return this.userService.findByCond({ email });
+  }
+
+  @Get('/me')
   @UseGuards(JwtAuthGuard)
   getMe(@Request() req) {
     return this.userService.findByCond({ id: +req.user.id });
   }
 
-  @Get("/followers")
+  @Get('/followers')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("runner")
+  @Roles('runner')
   getFollowers(@Request() req: any) {
     return this.userService.getRunnerFollowers(+req.user.id);
   }
 
-  @Get("/following-teams")
+  @Get('/following-teams')
   @UseGuards(JwtAuthGuard)
   geFollowingTeams(@Request() req: any) {
     return this.userService.getFollowingTeams(req.user.id);
   }
 
-  @Get(":id")
-  getUserProfile(@Param("id") id: number, @Query() query: { authId: string }) {
-    return this.userService.findById(+id, query.authId);
+  @Get(':id')
+  getUserProfile(@Param('id') id: number) {
+    return this.userService.findById(+id);
   }
 
-  @Patch("/image")
+  @Patch('/image')
   @UseGuards(JwtAuthGuard)
   updateImage(@Request() req, @Body() body: { imageId: number }) {
     return this.userService.updateImage(req.user.id, body.imageId);
   }
-
-  @Patch("/password")
+  @Patch('/password')
   @UseGuards(JwtAuthGuard)
   updatePassword(
     @Request() req,
@@ -116,13 +137,35 @@ export class UserController {
     return this.userService.changePassword(req.user.id, body);
   }
 
-  @Patch("/profile-data")
+  @Patch('/profile')
   @UseGuards(JwtAuthGuard)
-  updateProfileData(@Request() req, @Body() body: UpdateUserDto) {
-    return this.userService.updateProfileData(req.user.id, body);
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'image', maxCount: 1 },
+        { name: 'avatar', maxCount: 1 },
+      ],
+      {
+        limits: {
+          fileSize: 2 * 1024 * 1024, // Set to the larger limit (2MB for images)
+        },
+      },
+    ),
+  )
+  updateProfileData(
+    @UploadedFiles()
+    files: { image?: Express.Multer.File[]; avatar?: Express.Multer.File[] },
+    @Request() req,
+    @Body() body: UpdateUserDto,
+  ) {
+    return this.userService.updateProfileData(req.user.id, {
+      ...body,
+      image: files?.image?.[0],
+      avatar: files?.avatar?.[0],
+    });
   }
 
-  @Get("count")
+  @Get('count')
   count() {
     return this.userService.count();
   }

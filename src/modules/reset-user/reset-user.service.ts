@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "src/modules/users/entities/user.entity";
-import { Repository } from "typeorm";
-import { ResetUser } from "./entities/reset-user.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { ResetUser } from './entities/reset-user.entity';
 
 @Injectable()
 export class ResetUserService {
@@ -41,7 +41,7 @@ export class ResetUserService {
   async getResetUser(token: string) {
     const reset = await this.repository.findOne({
       where: { token },
-      relations: ["user"],
+      relations: ['user'],
     });
 
     return reset.user;

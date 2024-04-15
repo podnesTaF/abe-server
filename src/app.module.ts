@@ -1,99 +1,103 @@
-import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { ServeStaticModule } from "@nestjs/serve-static";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { resolve } from "path";
-import config from "./core/config/typeorm.config";
-import { AdminModule } from "./modules/admin/admin.module";
-import { AuthModule } from "./modules/auth/auth.module";
-import { BestsModule } from "./modules/bests/bests.module";
-import { ClubRequestsModule } from "./modules/club-requests/club-requests.module";
-import { ClubModule } from "./modules/club/club.module";
-import { ContentModule } from "./modules/content/content.module";
-import { CountryModule } from "./modules/country/country.module";
-import { EventsModule } from "./modules/events/events.module";
-import { FutureEventsModule } from "./modules/events/future-events.module";
-import { FeedbacksModule } from "./modules/feedbacks/feedbacks.module";
-import { FileModule } from "./modules/file/file.module";
-import { HashtagModule } from "./modules/hashtag/hashtag.module";
-import { IntegrationModule } from "./modules/integration/integration.module";
-import { LocationsModule } from "./modules/locations/locations.module";
-import { MediaModule } from "./modules/media/media.module";
-import { MemberModule } from "./modules/member/member.module";
-import { NewsModule } from "./modules/news/news.module";
-import { NotificationModule } from "./modules/notification/notification.module";
-import { PlayersModule } from "./modules/players/players.module";
-import { PrizesModule } from "./modules/prizes/prizes.module";
-import { PushTokenModule } from "./modules/push-token/push-token.module";
-import { RaceRegistrationModule } from "./modules/race-registration/race-registration.module";
-import { RaceModule } from "./modules/race/race.module";
-import { ResetUserModule } from "./modules/reset-user/reset-user.module";
-import { RoleModule } from "./modules/role/role.module";
-import { RunnerResultsModule } from "./modules/runner-results/runner-results.module";
-import { SplitsModule } from "./modules/splits/splits.module";
-import { StripeModule } from "./modules/stripe/stripe.module";
-import { TeamRaceRunnerModule } from "./modules/team-race-runner/team-race-runner.module";
-import { TeamRegistrationModule } from "./modules/team-registration/team-registration.module";
-import { TeamResultsModule } from "./modules/team-results/team-results.module";
-import { TeamsModule } from "./modules/teams/teams.module";
-import { TimetableModule } from "./modules/timetable/timetable.module";
-import { UserRoleModule } from "./modules/user-role/user-role.module";
-import { CoachModule } from "./modules/users/modules/coach.module";
-import { ManagerModule } from "./modules/users/modules/manager.module";
-import { RunnerModule } from "./modules/users/modules/runner.module";
-import { SpectatorModule } from "./modules/users/modules/spectator.module";
-import { UserModule } from "./modules/users/modules/user.module";
-import { VerifyMemberModule } from "./modules/verify-member/verify-member.module";
-import { ViewerRegistrationsModule } from "./modules/viewer-registrations/viewer-registrations.module";
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { resolve } from 'path';
+import config from './core/Config/typeorm.config';
+import { HttpRequestLogger } from './core/Loggers/http-request.logger';
+import { ArticleModule } from './modules/article/article.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { BestResultsModule } from './modules/best-results/best-results.module';
+import { CategoryModule } from './modules/category/category.module';
+import { ContentModule } from './modules/content/content.module';
+import { CountryModule } from './modules/country/country.module';
+import { DocumentModule } from './modules/document/document.module';
+import { EventRaceRegistrationModule } from './modules/event-race-registration/event-race-registration.module';
+import { EventRaceTypeModule } from './modules/event-race-type/event-race-type.module';
+import { EventPreviewModule } from './modules/event/event-preview.module';
+import { EventModule } from './modules/event/event.module';
+import { FileModule } from './modules/file/file.module';
+import { GenderModule } from './modules/gender/gender.module';
+import { HashtagModule } from './modules/hashtag/hashtag.module';
+import { IntegrationModule } from './modules/integration/integration.module';
+import { JoinRequestModule } from './modules/join-request/join-request.module';
+import { LocationModule } from './modules/location/location.module';
+import { MediaModule } from './modules/media/media.module';
+import { OttModule } from './modules/ott/ott.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PenaltyModule } from './modules/penalty/penalty.module';
+import { PrizesModule } from './modules/prizes/prizes.module';
+import { PushTokenModule } from './modules/push-token/push-token.module';
+import { RaceRunnerModule } from './modules/race-runner/race-runner.module';
+import { RaceTeamModule } from './modules/race-team/race-team.module';
+import { RaceModule } from './modules/race/race.module';
+import { ResetUserModule } from './modules/reset-user/reset-user.module';
+import { RoleModule } from './modules/role/role.module';
+import { SplitModule } from './modules/split/split.module';
+import { StandardModule } from './modules/standard/standard.module';
+import { TeamModule } from './modules/team/team.module';
+import { TimetableModule } from './modules/timetable/timetable.module';
+import { UserRoleModule } from './modules/user-role/user-role.module';
+import { UserModule } from './modules/users/modules/user.module';
+import { TicketModule } from './ticket/ticket.module';
+import { VisitorTicketModule } from './visitor-ticket/visitor-ticket.module';
+import { ParticipantModule } from './modules/participant/participant.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), // Import the ConfigModule to load environment variables
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot(config),
     ServeStaticModule.forRoot({
-      rootPath: resolve(__dirname, "static"),
+      rootPath: resolve(__dirname, 'static'),
     }),
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
-    EventsModule,
-    LocationsModule,
-    TeamsModule,
-    PlayersModule,
-    BestsModule,
-    PrizesModule,
-    ClubModule,
     CountryModule,
-    FileModule,
     MediaModule,
-    NewsModule,
     HashtagModule,
     ContentModule,
     IntegrationModule,
-    ClubRequestsModule,
-    ViewerRegistrationsModule,
-    RaceModule,
-    TeamResultsModule,
-    RunnerResultsModule,
-    SplitsModule,
-    AdminModule,
     ResetUserModule,
-    MemberModule,
-    VerifyMemberModule,
-    ManagerModule,
-    SpectatorModule,
-    RunnerModule,
-    CoachModule,
-    FeedbacksModule,
-    FutureEventsModule,
-    NotificationModule,
-    TeamRegistrationModule,
-    RaceRegistrationModule,
-    TeamRaceRunnerModule,
     PushTokenModule,
     RoleModule,
     UserRoleModule,
-    StripeModule,
+    GenderModule,
+    CategoryModule,
+    BestResultsModule,
+    StandardModule,
+    TeamModule,
+    ArticleModule,
+    EventModule,
+    LocationModule,
+    DocumentModule,
     TimetableModule,
+    EventRaceTypeModule,
+    PaymentsModule,
+    EventRaceRegistrationModule,
+    RaceModule,
+    RaceRunnerModule,
+    RaceTeamModule,
+    MediaModule,
+    PenaltyModule,
+    SplitModule,
+    FileModule,
+    JoinRequestModule,
+    TicketModule,
+    VisitorTicketModule,
+    OttModule,
+    EventPreviewModule,
+    PrizesModule,
+    ParticipantModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    if (process.env.NODE_ENV !== 'PRODUCTION') {
+      consumer.apply(HttpRequestLogger).forRoutes('*');
+    }
+  }
+}

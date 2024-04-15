@@ -1,15 +1,7 @@
-import { Event } from "src/modules/events/entities/event.entity";
-import { FutureEvent } from "src/modules/events/entities/future-event.entity";
-import { Media } from "src/modules/media/entities/media.entity";
-import { News } from "src/modules/news/entities/news.entity";
-import { NotificationEntity } from "src/modules/notification/entities/notification.entity";
-import {
-  Column,
-  Entity,
-  ManyToMany,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { Article } from 'src/modules/article/entities/article.entity';
+import { EventPreview } from 'src/modules/event/entities/event-preview.entity';
+import { Event } from 'src/modules/event/entities/event.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Content {
@@ -19,39 +11,45 @@ export class Content {
   @Column()
   type: string;
 
-  @Column({ default: "news" })
+  @Column({ default: 'article' })
   purpose: string;
 
-  @Column({ type: "text", nullable: true })
+  @Column({ type: 'text', nullable: true })
   text: string;
 
-  @ManyToOne(() => Media, { nullable: true })
-  media: Media;
-
-  @ManyToOne(() => News, (news) => news.contents, {
+  @Column({
     nullable: true,
-    onDelete: "CASCADE",
   })
-  news: News;
+  mediaUrl: string;
+
+  @Column({ nullable: true })
+  articleId: number;
+
+  @ManyToOne(() => Article, (article) => article.contents, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  article: Article;
+
+  @Column({
+    nullable: true,
+  })
+  eventId: number;
 
   @ManyToOne(() => Event, (event) => event.contents, {
     nullable: true,
-    onDelete: "CASCADE",
+    onDelete: 'CASCADE',
   })
   event: Event;
 
-  @ManyToMany(
-    () => NotificationEntity,
-    (notification) => notification.contents,
-    {
-      nullable: true,
-    },
-  )
-  notifications: NotificationEntity[];
-
-  @ManyToOne(() => FutureEvent, (futureEvent) => futureEvent.contents, {
+  @Column({
     nullable: true,
-    onDelete: "CASCADE",
   })
-  futureEvent: FutureEvent;
+  eventPreviewId: number;
+
+  @ManyToOne(() => EventPreview, (preview) => preview.contents, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  eventPreview: EventPreview;
 }
