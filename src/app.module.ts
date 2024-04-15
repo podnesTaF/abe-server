@@ -5,7 +5,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { resolve } from "path";
 import { config as typeOrmConfig } from "./core/config/typeorm.config";
-import { HttpRequestLogger } from "./core/loggers/http-request.logger";
+import { HttpRequestLogger } from "./core/Loggers/http-request.logger";
 import { ArticleModule } from "./modules/article/article.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BestResultsModule } from "./modules/best-results/best-results.module";
