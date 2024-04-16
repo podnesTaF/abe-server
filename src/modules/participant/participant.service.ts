@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import * as qrcode from 'qrcode';
-import { In, Repository } from 'typeorm';
-import { EventRaceRegistration } from '../event-race-registration/entities/event-race-registration.entity';
-import { RegistrationType } from '../event-race-registration/entities/registration-type.entity';
-import { EventRaceType } from '../event-race-type/entities/event-race-type.entity';
-import { FileService } from '../file/file.service';
-import { CreateParticipantDto } from './dto/create-participant.dto';
-import { Participant } from './entities/participant.entity';
-import { generateUniqueBibNumber } from './utils/helpers';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import * as qrcode from "qrcode";
+import { In, Repository } from "typeorm";
+import { EventRaceRegistration } from "../event-race-registration/entities/event-race-registration.entity";
+import { RegistrationType } from "../event-race-registration/entities/registration-type.entity";
+import { EventRaceType } from "../event-race-type/entities/event-race-type.entity";
+import { FileService } from "../file/file.service";
+import { CreateParticipantDto } from "./dto/create-participant.dto";
+import { Participant } from "./entities/participant.entity";
+import { generateUniqueBibNumber } from "./utils/helpers";
 
 @Injectable()
 export class ParticipantService {
@@ -27,8 +27,19 @@ export class ParticipantService {
   async createParticipant(dto: CreateParticipantDto): Promise<Participant> {
     const { eventCategoryIds, ...participantData } = dto;
 
+    // check if the participant is unique by email and event categories
+
+    const isUnique = await this.isUnique({
+      email: participantData.email,
+      eventRaceTypeIds: eventCategoryIds,
+    });
+
+    if (!isUnique) {
+      throw new Error("Participant already exists");
+    }
+
     const takenBibNumbers = await this.participantRepository.find({
-      select: ['bibNumber'],
+      select: ["bibNumber"],
     });
 
     const bibNumber = generateUniqueBibNumber(takenBibNumbers);
@@ -93,12 +104,11 @@ export class ParticipantService {
     const participantEventCategoryIds = participantRegistrations.map(
       (registration) => registration.eventRaceTypeId,
     );
-
-    const isUnique = eventRaceTypeIds.every((eventCategoryId) =>
+    const isTaken = eventRaceTypeIds.some((eventCategoryId) =>
       participantEventCategoryIds.includes(eventCategoryId),
     );
 
-    return isUnique;
+    return !isTaken;
   }
 
   async getParticipantByCond(cond: {
@@ -136,11 +146,11 @@ export class ParticipantService {
       !eventCategories.length ||
       eventCategories.length !== eventCategoryIds.length
     ) {
-      throw new Error('Soem event categories doen not exists');
+      throw new Error("Soem event categories doen not exists");
     }
 
     const type = await this.registrationTypeRepository.findOne({
-      where: { name: 'participant' },
+      where: { name: "participant" },
     });
 
     const registrations = eventCategories.map((eventCategory) => {
@@ -154,3 +164,4 @@ export class ParticipantService {
     return await this.eventRaceRegistrationRepository.save(registrations);
   }
 }
+
