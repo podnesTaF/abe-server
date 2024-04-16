@@ -1,18 +1,16 @@
-import { Country } from 'src/modules/country/entity/country.entity';
-import { EventRaceRegistration } from 'src/modules/event-race-registration/entities/event-race-registration.entity';
-import { Event } from 'src/modules/event/entities/event.entity';
-import { Gender } from 'src/modules/gender/entities/gender.entity';
+import { Country } from "src/modules/country/entity/country.entity";
+import { EventRaceRegistration } from "src/modules/event-race-registration/entities/event-race-registration.entity";
+import { Event } from "src/modules/event/entities/event.entity";
+import { Gender } from "src/modules/gender/entities/gender.entity";
 import {
   Column,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  Unique,
-} from 'typeorm';
+} from "typeorm";
 
 @Entity()
-@Unique(['email', 'eventId'])
 export class Participant {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,7 +27,7 @@ export class Participant {
   @Column()
   eventId: number;
   @ManyToOne(() => Event, (event) => event.participants, {
-    onDelete: 'RESTRICT',
+    onDelete: "RESTRICT",
   })
   event: Event;
 

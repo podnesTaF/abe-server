@@ -1,8 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { CreateParticipantDto } from './dto/create-participant.dto';
-import { ParticipantService } from './participant.service';
+import { Body, Controller, Post } from "@nestjs/common";
+import { CreateParticipantDto } from "./dto/create-participant.dto";
+import { ParticipantService } from "./participant.service";
 
-@Controller('participants')
+@Controller("participants")
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) {}
 
@@ -11,8 +11,9 @@ export class ParticipantController {
     return this.participantService.createParticipant(dto);
   }
 
-  @Post('unique')
+  @Post("unique")
   isUnique(@Body() dto: { email: string; eventRaceTypeIds: number[] }) {
     return this.participantService.isUnique(dto);
   }
 }
+
