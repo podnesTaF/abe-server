@@ -1,14 +1,17 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
+import sgMail from "@sendgrid/mail";
 import * as qrcode from "qrcode";
 import { In, Repository } from "typeorm";
 import { EventRaceRegistration } from "../event-race-registration/entities/event-race-registration.entity";
 import { RegistrationType } from "../event-race-registration/entities/registration-type.entity";
 import { EventRaceType } from "../event-race-type/entities/event-race-type.entity";
 import { FileService } from "../file/file.service";
+import { OneTimeTokenService } from "../ott/ott.service";
+import { getVerificationLetterTemplate } from "../users/utils/getVerificationTemplate";
 import { CreateParticipantDto } from "./dto/create-participant.dto";
 import { Participant } from "./entities/participant.entity";
-import { generateUniqueBibNumber } from "./utils/helpers";
 
 @Injectable()
 export class ParticipantService {
@@ -22,9 +25,15 @@ export class ParticipantService {
     @InjectRepository(RegistrationType)
     private registrationTypeRepository: Repository<RegistrationType>,
     private readonly fileService: FileService,
-  ) {}
+    private readonly ottService: OneTimeTokenService,
+    private readonly jwtService: JwtService,
+  ) {
+    sgMail.setApiKey(process.env.SEND_GRID_API_K);
+  }
 
-  async createParticipant(dto: CreateParticipantDto): Promise<Participant> {
+  async createParticipant(
+    dto: CreateParticipantDto,
+  ): Promise<Participant & { ott: string }> {
     const { eventCategoryIds, ...participantData } = dto;
 
     // check if the participant is unique by email and event categories
@@ -38,50 +47,58 @@ export class ParticipantService {
       throw new Error("Participant already exists");
     }
 
-    const takenBibNumbers = await this.participantRepository.find({
-      select: ["bibNumber"],
-    });
-
-    const bibNumber = generateUniqueBibNumber(takenBibNumbers);
-
     // save the participant to the database
     const participant = await this.participantRepository.save({
       ...participantData,
-      bibNumber,
     });
 
-    // create a registration for the race for event categories specified in the dto
-    const eventRaceRegistrations = await this.createRegistrationsForRaces(
-      participant,
-      eventCategoryIds,
-    );
+    let participantWithRegistrations: Participant;
+    let ott: string;
+    try {
+      // create a registration for the race for event categories specified in the dto
+      const eventRaceRegistrations = await this.createRegistrationsForRaces(
+        participant,
+        eventCategoryIds,
+      );
 
-    // update the participant's registration with the event categories
+      participant.registrations = eventRaceRegistrations;
+      participantWithRegistrations = await this.participantRepository.save(
+        participant,
+      );
 
-    participant.registrations = eventRaceRegistrations;
+      // generate jwt to contain necessary data
+      const jwtToken = this.jwtService.sign(
+        { email: participant.email, id: participant.id },
+        {
+          expiresIn: "1d",
+        },
+      );
+      // create ott token
+      const token = await this.ottService.createToken(
+        null,
+        jwtToken,
+        24 * 60,
+        "participant",
+      );
 
-    // build a qr code for the participant based on the participant's id, eventId and bib number.
+      ott = token;
 
-    const { qrCodeBuffer, qrCodeFileName } =
-      await this.generateQrCodeForParticipant(participant);
+      // send email to the participant
+      await this.sendVerificationEmail(participant, token);
+    } catch (error) {
+      // delete the participant if an error occurs and if the participant was saved
+      if (participant?.id) {
+        await this.participantRepository.delete(participant.id);
+      }
 
-    // upload the qr code to the cloud storage
+      const errorToThrow = new Error(
+        `Failed to process registration: ${error.message || error.toString()}`,
+      );
+      errorToThrow.stack = error.stack; // Preserve original stack trace
+      throw errorToThrow;
+    }
 
-    // const qrCodeUrl = await this.fileService.uploadFileToStorage(
-    //   qrCodeFileName,
-    //   '/pdfs/qrcodes',
-    //   'image/png',
-    //   qrCodeBuffer,
-    //   { mediaName: qrCodeFileName, contentType: 'image/png' },
-    // );
-
-    // create a ticket with qr code and other details for the participant
-
-    // send the ticket to the participant's email with registration and event details
-
-    // return the participant with status
-
-    return this.participantRepository.save(participant);
+    return { ...participantWithRegistrations, ott };
   }
 
   async isUnique(query: {
@@ -90,31 +107,83 @@ export class ParticipantService {
   }): Promise<boolean> {
     const { email, eventRaceTypeIds } = query;
 
-    const participant = await this.getParticipantByCond({ email });
+    const participant = await this.getParticipantByCond(
+      {
+        email,
+      },
+      ["registrations"],
+    );
 
-    if (!participant) {
+    if (!participant || participant.status !== "confirmation") {
       return true;
     }
 
-    const participantRegistrations =
-      await this.eventRaceRegistrationRepository.find({
-        where: { participantId: participant.id },
-      });
-
-    const participantEventCategoryIds = participantRegistrations.map(
+    const registrationIds = participant.registrations.map(
       (registration) => registration.eventRaceTypeId,
     );
-    const isTaken = eventRaceTypeIds.some((eventCategoryId) =>
-      participantEventCategoryIds.includes(eventCategoryId),
-    );
 
-    return !isTaken;
+    for (const id of eventRaceTypeIds) {
+      if (registrationIds.includes(id)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  async getParticipantByCond(cond: {
-    [key: string]: any;
-  }): Promise<Participant> {
-    return this.participantRepository.findOne({ where: cond });
+  async getParticipantByCond(
+    cond: {
+      [key: string]: any;
+    },
+    relations?: string[],
+  ): Promise<Participant> {
+    return this.participantRepository.findOne({ where: cond, relations });
+  }
+
+  async resendConfirmationEmail(token: string): Promise<string> {
+    const ott = await this.ottService.getOttInfo(token);
+
+    if (!ott) {
+      throw new NotFoundException("Token not found");
+    }
+
+    const { email, id } = this.jwtService.verify(ott.jwtToken) as {
+      email: string;
+      id: number;
+    };
+
+    const participant = await this.getParticipantByCond({
+      id: id,
+      email: email,
+    });
+
+    await this.sendVerificationEmail(participant, token);
+
+    return "Email sent";
+  }
+
+  async sendVerificationEmail(
+    participant: Participant,
+    token: string,
+  ): Promise<void> {
+    const msg = {
+      to: participant.email,
+      from: {
+        email: "it.podnes@gmail.com",
+        name: "Ace Battle Mile",
+      },
+      subject: "Confirm your email address and grab tickets | Ace Battle Mile",
+      html: getVerificationLetterTemplate({
+        name: participant.firstName + " " + participant.lastName,
+        token: token,
+      }),
+    };
+
+    try {
+      await sgMail.send(msg);
+    } catch (error) {
+      throw new Error("Error sending email");
+    }
   }
 
   async generateQrCodeForParticipant(participant: Participant): Promise<{

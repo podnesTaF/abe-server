@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Param, Post } from "@nestjs/common";
 import { CreateParticipantDto } from "./dto/create-participant.dto";
 import { ParticipantService } from "./participant.service";
 
@@ -9,6 +9,11 @@ export class ParticipantController {
   @Post()
   createParticipant(@Body() dto: CreateParticipantDto) {
     return this.participantService.createParticipant(dto);
+  }
+
+  @Post("/:token/resend-confirmation-email")
+  resendConfirmationEmail(@Param("token") token: string) {
+    return this.participantService.resendConfirmationEmail(token);
   }
 
   @Post("unique")
