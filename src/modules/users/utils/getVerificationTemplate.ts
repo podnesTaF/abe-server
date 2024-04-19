@@ -1,9 +1,11 @@
 export const getVerificationLetterTemplate = ({
   name,
   token,
+  eventCode,
 }: {
   name: string;
   token: string;
+  eventCode?: string;
 }) => {
   return `
   <!DOCTYPE html>
@@ -73,19 +75,19 @@ export const getVerificationLetterTemplate = ({
       <div class="main-container">
         <div class="title-text">Hi, ${name}</div>
         <div class="title-text mb-4">
-          You are about to join Ace Battle Mile!
+          You are about to participate in Ace Battle Mile!
         </div>
         <div class="main-text">
-          We well received your registration for Ace Battle Mile! You're nearly
+          We well received your registration for ${eventCode}! You're nearly
           ready to be part of our game. Just
-          <a href="http://localhost:3000/signup/verify-email?ott=${token}"
+          <a href="https://aba.run/events/${eventCode}/confirm/${token}"
             >click here</a
           >
           to confirm your email address. Please note, this link is valid for 24
           hour.
         </div>
         <div class="main-text">
-          Let us know via acebattlemile@info.com if you have any problems
+          Let us know via info@aba.run if you have any problems
         </div>
         <div class="main-text">Have a nice day!</div>
         <div class="footer">
