@@ -8,10 +8,13 @@ import { EventRaceRegistration } from "../event-race-registration/entities/event
 import { RegistrationType } from "../event-race-registration/entities/registration-type.entity";
 import { EventRaceType } from "../event-race-type/entities/event-race-type.entity";
 import { FileService } from "../file/file.service";
+import { generatePDFFromHTML } from "../file/utils/getPdfFromHTML";
 import { OneTimeTokenService } from "../ott/ott.service";
 import { getVerificationLetterTemplate } from "../users/utils/getVerificationTemplate";
 import { CreateParticipantDto } from "./dto/create-participant.dto";
 import { Participant } from "./entities/participant.entity";
+import { getParticipantIndividualRaceTicket } from "./utils/getParticipantIndividualRaceTicket";
+import { getParticipantTicketAllRaces } from "./utils/getParticipantTicketAllRaces";
 
 @Injectable()
 export class ParticipantService {
@@ -83,8 +86,15 @@ export class ParticipantService {
 
       ott = token;
 
+      // load some relations for participant
+
+      participantWithRegistrations = await this.participantRepository.findOne({
+        where: { id: participant.id },
+        relations: ["registrations.eventRaceType.raceType", "event"],
+      });
+
       // send email to the participant
-      await this.sendVerificationEmail(participant, token);
+      await this.sendVerificationEmail(participantWithRegistrations, token);
     } catch (error) {
       // delete the participant if an error occurs and if the participant was saved
       if (participant?.id) {
@@ -176,6 +186,7 @@ export class ParticipantService {
       html: getVerificationLetterTemplate({
         name: participant.firstName + " " + participant.lastName,
         token: token,
+        eventCode: participant.event.eventCode,
       }),
     };
 
@@ -184,6 +195,126 @@ export class ParticipantService {
     } catch (error) {
       throw new Error("Error sending email");
     }
+  }
+
+  async confirmEmail(token: string): Promise<Participant> {
+    const ott = await this.ottService.getOttInfo(token);
+
+    if (!ott) {
+      throw new NotFoundException("Token not found");
+    }
+
+    const { email, id } = this.jwtService.verify(ott.jwtToken) as {
+      email: string;
+      id: number;
+    };
+
+    const participant = await this.getParticipantByCond(
+      {
+        id: id,
+        email: email,
+      },
+      ["registrations.eventRaceType.raceType", "event"],
+    );
+
+    if (!participant) {
+      throw new NotFoundException("Participant not found");
+    }
+
+    if (participant.status === "confirmed") {
+      return participant;
+    }
+
+    participant.status = "confirmed";
+
+    // gererate participat hash (jwt)
+
+    const participantHash = this.jwtService.sign(
+      {
+        email: participant.email,
+        id: participant.id,
+        bibNumber: participant.bibNumber,
+      },
+      {
+        expiresIn:
+          participant.event.endDate.getTime() -
+          Date.now() +
+          1000 * 60 * 60 * 240, // end date + 10 days in case of changes
+      },
+    );
+
+    participant.entranceHash = participantHash;
+
+    return this.participantRepository.save(participant);
+  }
+
+  async generateTicketsForParticipant(token: string): Promise<string> {
+    const ott = await this.ottService.getOttInfo(token);
+
+    if (!ott) {
+      throw new NotFoundException("Token not found");
+    }
+
+    const { email, id } = this.jwtService.verify(ott.jwtToken) as {
+      email: string;
+      id: number;
+    };
+
+    const participant = await this.getParticipantByCond(
+      {
+        id: id,
+        email: email,
+      },
+      ["registrations.eventRaceType.raceType", "event.location.country"],
+    );
+
+    if (!participant) {
+      throw new NotFoundException("Participant not found");
+    }
+
+    if (participant.ticketUrl) {
+      return participant.ticketUrl;
+    }
+
+    if (participant.status !== "confirmed" || !participant.entranceHash) {
+      throw new Error("Participant is not confirmed");
+    }
+
+    // generate the ticket
+
+    let htmlContent: string;
+    let ticketType: "multiple" | "individual";
+
+    let randomNum = Math.floor(Math.random() * 1000);
+
+    if (participant.registrations.length > 1) {
+      htmlContent = getParticipantTicketAllRaces(participant);
+      ticketType = "multiple";
+    } else {
+      htmlContent = getParticipantIndividualRaceTicket(participant);
+      ticketType = "individual";
+    }
+
+    const ticketBuffer = await generatePDFFromHTML(htmlContent);
+
+    const ticketFileName = `participant-${ticketType}-${participant.lastName}-${randomNum}.pdf`;
+
+    // upload the ticket to the storage
+    const ticketUrl = await this.fileService.uploadFileToStorage(
+      ticketFileName,
+      "tickets",
+      "application/pdf",
+      ticketBuffer,
+      {
+        contentType: "application/pdf",
+      },
+    );
+
+    participant.ticketUrl = ticketUrl;
+
+    await this.participantRepository.save(participant);
+
+    return ticketUrl;
   }
 
   async generateQrCodeForParticipant(participant: Participant): Promise<{

@@ -61,6 +61,9 @@ export class Participant {
   bibNumber: number;
 
   @Column({ nullable: true })
+  entranceHash: string;
+
+  @Column({ nullable: true })
   qrCodeUrl: string;
 
   @Column({ nullable: true })
