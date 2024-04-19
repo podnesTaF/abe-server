@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import sgMail from "@sendgrid/mail";
-import * as qrcode from "qrcode";
 import { In, Repository } from "typeorm";
 import { EventRaceRegistration } from "../event-race-registration/entities/event-race-registration.entity";
 import { RegistrationType } from "../event-race-registration/entities/registration-type.entity";
@@ -13,6 +12,7 @@ import { OneTimeTokenService } from "../ott/ott.service";
 import { getVerificationLetterTemplate } from "../users/utils/getVerificationTemplate";
 import { CreateParticipantDto } from "./dto/create-participant.dto";
 import { Participant } from "./entities/participant.entity";
+import { getConfirmedParticipantEmail } from "./utils/getConfirmedParticipantEmail";
 import { getParticipantIndividualRaceTicket } from "./utils/getParticipantIndividualRaceTicket";
 import { getParticipantTicketAllRaces } from "./utils/getParticipantTicketAllRaces";
 
@@ -179,7 +179,7 @@ export class ParticipantService {
     const msg = {
       to: participant.email,
       from: {
-        email: "it.podnes@gmail.com",
+        email: "info@aba.run",
         name: "Ace Battle Mile",
       },
       subject: "Confirm your email address and grab tickets | Ace Battle Mile",
@@ -194,6 +194,44 @@ export class ParticipantService {
       await sgMail.send(msg);
     } catch (error) {
       throw new Error("Error sending email");
+    }
+  }
+
+  async sendTicketEmail(
+    participant: Participant,
+    file: Buffer,
+    ticketFileName: string,
+  ): Promise<void> {
+    // file for the attachment
+    const filebase64 = file.toString("base64");
+
+    const attachment = [
+      {
+        content: filebase64,
+        filename: ticketFileName,
+        type: "application/pdf",
+        disposition: "attachment",
+      },
+    ];
+
+    const msg = {
+      to: participant.email,
+      from: {
+        email: "info@aba.run",
+        name: "Ace Battle Mile",
+      },
+      subject: "Your Ace Battle Mile Ticket & Event Details | Ace Battle Mile",
+      html: getConfirmedParticipantEmail({
+        participant: participant,
+      }),
+      attachments: attachment,
+    };
+
+    // Send the email
+    try {
+      await sgMail.send(msg);
+    } catch (error) {
+      console.error("Failed to send email:", error);
     }
   }
 
@@ -226,6 +264,16 @@ export class ParticipantService {
     }
 
     participant.status = "confirmed";
+
+    // generate the bib number
+
+    const generateBibNumber = await this.generateBibNumber(
+      participant.eventId,
+      50,
+      1000,
+    );
+
+    participant.bibNumber = generateBibNumber;
 
     // gererate participat hash (jwt)
 
@@ -314,23 +362,11 @@ export class ParticipantService {
 
     await this.participantRepository.save(participant);
 
+    // send ticket duplicate to the participant's email
+
+    await this.sendTicketEmail(participant, ticketBuffer, ticketFileName);
+
     return ticketUrl;
-  }
-
-  async generateQrCodeForParticipant(participant: Participant): Promise<{
-    qrCodeBuffer: Buffer;
-    qrCodeFileName: string;
-  }> {
-    const qrCodeData = `id:${participant};eventId:${participant.eventId};email:${participant.email};bibNumber:${participant.bibNumber}`;
-
-    const qrCodeBuffer = await qrcode.toBuffer(qrCodeData);
-
-    const qrCodeFileName = `participant-${participant.email}-${participant.id}.png`;
-
-    return {
-      qrCodeBuffer,
-      qrCodeFileName,
-    };
   }
 
   async createRegistrationsForRaces(
@@ -362,6 +398,34 @@ export class ParticipantService {
     });
 
     return await this.eventRaceRegistrationRepository.save(registrations);
+  }
+
+  async getParticipantById(id: number): Promise<Participant> {
+    return this.participantRepository.findOne({
+      where: { id },
+      relations: ["registrations.eventRaceType.raceType", "event"],
+    });
+  }
+
+  async generateBibNumber(
+    eventId: number,
+    startRange: number,
+    endRange: number,
+  ): Promise<number> {
+    const participants = await this.participantRepository.find({
+      where: { eventId },
+      select: ["bibNumber"],
+    });
+
+    const bibNumbers = participants.map((participant) => participant.bibNumber);
+
+    for (let i = startRange; i <= endRange; i++) {
+      if (!bibNumbers.includes(i)) {
+        return i;
+      }
+    }
+
+    throw new Error("No bib number available");
   }
 }
 

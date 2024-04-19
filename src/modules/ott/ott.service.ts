@@ -113,7 +113,7 @@ export class OneTimeTokenService {
     const msg = {
       to: dto.email,
       from: {
-        email: "it.podnes@gmail.com",
+        email: "info@aba.run",
         name: "Ace Battle Mile",
       },
       subject: "Your OTP | Ace Battle Mile",
