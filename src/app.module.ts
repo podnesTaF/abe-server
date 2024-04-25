@@ -43,6 +43,7 @@ import { UserRoleModule } from "./modules/user-role/user-role.module";
 import { UserModule } from "./modules/users/modules/user.module";
 import { TicketModule } from "./ticket/ticket.module";
 import { VisitorTicketModule } from "./visitor-ticket/visitor-ticket.module";
+import { RaceResultModule } from './race-result/race-result.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { VisitorTicketModule } from "./visitor-ticket/visitor-ticket.module";
     EventPreviewModule,
     PrizesModule,
     ParticipantModule,
+    RaceResultModule,
   ],
 })
 export class AppModule implements NestModule {
