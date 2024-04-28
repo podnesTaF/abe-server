@@ -26,6 +26,7 @@ import { Penalty } from "src/modules/penalty/entities/penalty.entity";
 import { PrizeCategory } from "src/modules/prizes/entities/prize-category";
 import { PrizeEntity } from "src/modules/prizes/entities/prize.entity";
 import { PushToken } from "src/modules/push-token/entities/push-token.entity";
+import { RrParticipant } from "src/modules/race-result/entities/rr-participant.entity";
 import { RaceRunner } from "src/modules/race-runner/entities/race-runner.entity";
 import { RunnerRole } from "src/modules/race-runner/entities/runner-role.entity";
 import { RunnerStatus } from "src/modules/race-runner/entities/runner-status.entity";
@@ -73,6 +74,7 @@ export const config: TypeOrmModuleOptions = {
     JoinRequest,
     Team,
     TeamPlayer,
+    RrParticipant,
     Location,
     Document,
     Timetable,
