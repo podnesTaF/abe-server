@@ -3,7 +3,6 @@ import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { config } from "dotenv";
 import { AppModule } from "./app.module";
-import { ParseRaceResultMiddleware } from "./middlewares/race-result.middleware";
 
 async function bootstrap() {
   config();
@@ -29,8 +28,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, documentConfig);
   SwaggerModule.setup("api/docs", app, document);
-
-  app.use("/api/v2/race-result", new ParseRaceResultMiddleware().use.bind(app));
 
   app.setGlobalPrefix("api/v2");
   await app.listen(process.env.PORT || 4000, process.env.HOST);
