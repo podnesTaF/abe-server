@@ -12,13 +12,12 @@ export class IntegrationService {
   }
 
   createRaceResults(body: any) {
-    console.log(body);
     this.gateway.broadcastRaceResult(body);
   }
 
   async createParticipant(dto: CreateParticipantDto) {
     const { data } = await axios.post(
-      "https://api.raceresult.com/287865/OJVQEZUWGHZCBTD4D74U692MEZPVDZGO",
+      "http://localhost/_287865/api/OJVQEZUWGHZCBTD4D74U692MEZPVDZGO",
       dto,
     );
 
@@ -27,14 +26,14 @@ export class IntegrationService {
 
   async getStaticResults() {
     const { data } = await axios.get(
-      "https://api.raceresult.com/287865/XD6G8BR0BT8ZM7FM4CT32QZGTXOCCK8J",
+      "http://localhost/_287865/api/XD6G8BR0BT8ZM7FM4CT32QZGTXOCCK8J",
     );
     return data;
   }
 
   async getParticipants() {
     const { data } = await axios.get(
-      "https://api.raceresult.com/287865/R0WUF52DAVGQTR3287SBG8VM4UXJV2ZV",
+      "http://localhost/_287865/api/R0WUF52DAVGQTR3287SBG8VM4UXJV2ZV",
     );
 
     return data;
