@@ -11,6 +11,16 @@ export class IntegrationController {
     return this.integrationService.createRaceResults(body);
   }
 
+  @Post("/changes")
+  async getChanges(@Body() body: any) {
+    console.log("changes", body);
+  }
+
+  @Post("/live")
+  async getLive(@Body() body: any) {
+    console.log("live", body);
+  }
+
   @Post("/race-result/pacer-joker-switch")
   async createRaceResultsPacerJokerSwitch(@Body() body: any) {
     return await this.integrationService.createRaceResultsPacerJokerSwitch(
