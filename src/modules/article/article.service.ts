@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FileService } from '../file/file.service';
-import { CreateArticleDto } from './dto/create-article.dto';
-import { Article } from './entities/article.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { FileService } from "../file/file.service";
+import { CreateArticleDto } from "./dto/create-article.dto";
+import { Article } from "./entities/article.entity";
 
 @Injectable()
 export class ArticleService {
@@ -22,7 +22,7 @@ export class ArticleService {
     if (previewImage) {
       const url = await this.fileService.uploadFileToStorage(
         previewImage.originalname,
-        'articles',
+        "articles",
         previewImage.mimetype,
         previewImage.buffer,
         {
@@ -52,7 +52,7 @@ export class ArticleService {
     tags?: string;
   }) {
     const hashtags: string[] | null =
-      (tags?.split(',')[0] !== '' && tags?.split(',')) || null;
+      (tags?.split(",")[0] !== "" && tags?.split(",")) || null;
 
     const newsCount = await this.articleRepository.count();
     const newsList = relatedNews
@@ -62,13 +62,13 @@ export class ArticleService {
     const totalPages = Math.ceil(newsCount / (limit || newsCount));
 
     const newsPreviews = newsList.map((news) => {
-      const content = news.contents.find((item) => item.type === 'text');
+      const content = news.contents.find((item) => item.type === "text");
 
-      let previewText = '';
+      let previewText = "";
       if (content) {
         previewText =
           content.text.length > (textLength || 90)
-            ? content.text.substring(0, textLength || 90) + '...'
+            ? content.text.substring(0, textLength || 90) + "..."
             : content.text;
       }
 
@@ -87,7 +87,7 @@ export class ArticleService {
   // Get all news
   getNews(limit?: number, page?: number, hashtags?: string[]) {
     return this.articleRepository.find({
-      relations: ['contents'],
+      relations: ["contents"],
       take: limit,
       where: hashtags
         ? {
@@ -95,14 +95,19 @@ export class ArticleService {
           }
         : {},
       skip: page ? (page - 1) * limit : 0,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
   }
 
   async getArticle(id: number) {
     const article = await this.articleRepository.findOne({
       where: { id: +id },
-      relations: ['contents', 'hashtags', 'hashtags.articles'],
+      relations: [
+        "contents",
+        "hashtags",
+        "hashtags.articles",
+        "hashtags.articles.contents",
+      ],
     });
 
     const relatedFullNews: {
@@ -116,8 +121,6 @@ export class ArticleService {
         ),
       };
     }, {});
-
-    console.log(relatedFullNews);
 
     const relatedArticles = await this.getNewsPreviews({
       relatedNews: Object.values(relatedFullNews).filter(
