@@ -1,6 +1,5 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { config } from "dotenv";
 import { AppModule } from "./app.module";
 
@@ -19,17 +18,7 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
 
-  const documentConfig = new DocumentBuilder()
-    .setTitle("Ace Battle Mile API 1.0")
-    .setDescription(
-      "The description of the ABM 1.0 for the Ace Battle Mile application.",
-    )
-    .setVersion("2.0")
-    .build();
-  const document = SwaggerModule.createDocument(app, documentConfig);
-  SwaggerModule.setup("api/docs", app, document);
-
   app.setGlobalPrefix("api/v1");
-  await app.listen(process.env.PORT || 4001, process.env.HOST);
+  await app.listen(process.env.PORT || 4000, process.env.HOST);
 }
 bootstrap();
